@@ -1,0 +1,297 @@
+{% extends "admin/base.html" %}
+{% block title %}Code Maker | Admin{% endblock %}
+{% block nav_book_codes %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .code-table-desc {
+        font-size: 11.5px;
+        color: var(--ink-faint);
+        margin-top: 2px;
+        line-height: 1.4;
+    }
+    .delete-btn {
+        background: none;
+        border: none;
+        color: #EF4444;
+        cursor: pointer;
+        font-size: 13px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: background 0.13s;
+    }
+    .delete-btn:hover { background: #FEF2F2; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">Books</div>
+    <h1 class="page-title">Code Maker</h1>
+    <p class="page-subtitle">Manage Main categories, Subject categories, and Shelves.</p>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; align-items:start;">
+
+    <!-- ── Main Categories ── -->
+    <div>
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">Add Main Category</span></div>
+            <form method="POST" action="{{ url_for('admin.book_codes') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="add_main">
+                <div class="card-body">
+                    {% if main_error %}
+                    <div class="alert alert-error" style="margin-bottom:10px;">
+                        <span class="alert-icon">&#9888;</span><div>{{ main_error }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label class="form-label">Code</label>
+                        <input class="form-input" type="text" name="main_name"
+                               placeholder="e.g. TXT, REF"
+                               style="text-transform:uppercase; letter-spacing:0.06em;"
+                               maxlength="10" autocomplete="off" required>
+                        <span class="form-hint">Short uppercase code.</span>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label class="form-label">Description <span class="opt">(optional)</span></label>
+                        <input class="form-input" type="text" name="main_desc"
+                               placeholder="e.g. Textbooks">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Main Categories</span>
+                <span class="badge badge-grey">{{ mains|length }}</span>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>#</th><th>Code</th><th></th></tr></thead>
+                    <tbody>
+                    {% for m in mains %}
+                    <tr>
+                        <td style="color:var(--ink-faint); font-size:12px;">{{ loop.index }}</td>
+                        <td>
+                            <span style="font-family:'Courier New',monospace; font-size:13px; font-weight:700;
+                                         color:var(--maroon); background:var(--maroon-pale);
+                                         padding:2px 8px; border-radius:3px;">{{ m.name }}</span>
+                            {% if m.description %}
+                            <div class="code-table-desc">{{ m.description }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            <form method="POST" action="{{ url_for('admin.book_codes') }}"
+                                  onsubmit="return confirm('Delete {{ m.name }}?');" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="action"  value="delete_main">
+                                <input type="hidden" name="main_id" value="{{ m.id }}">
+                                <button type="submit" class="delete-btn" title="Delete">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" style="text-align:center; color:var(--ink-faint); padding:20px;">None yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Subject Categories ── -->
+    <div>
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">Add Subject Category</span></div>
+            <form method="POST" action="{{ url_for('admin.book_codes') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="add_subject">
+                <div class="card-body">
+                    {% if subject_error %}
+                    <div class="alert alert-error" style="margin-bottom:10px;">
+                        <span class="alert-icon">&#9888;</span><div>{{ subject_error }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label class="form-label">Code</label>
+                        <input class="form-input" type="text" name="subject_name"
+                               placeholder="e.g. NAV, MEC"
+                               style="text-transform:uppercase; letter-spacing:0.06em;"
+                               maxlength="10" autocomplete="off" required>
+                        <span class="form-hint">Short uppercase code.</span>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label class="form-label">Description <span class="opt">(optional)</span></label>
+                        <input class="form-input" type="text" name="subject_desc"
+                               placeholder="e.g. Naval Architecture">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Subject Categories</span>
+                <span class="badge badge-grey">{{ subjects|length }}</span>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>#</th><th>Code</th><th></th></tr></thead>
+                    <tbody>
+                    {% for s in subjects %}
+                    <tr>
+                        <td style="color:var(--ink-faint); font-size:12px;">{{ loop.index }}</td>
+                        <td>
+                            <span style="font-family:'Courier New',monospace; font-size:13px; font-weight:700;
+                                         color:var(--green); background:var(--green-pale);
+                                         padding:2px 8px; border-radius:3px;">{{ s.name }}</span>
+                            {% if s.description %}
+                            <div class="code-table-desc">{{ s.description }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            <form method="POST" action="{{ url_for('admin.book_codes') }}"
+                                  onsubmit="return confirm('Delete {{ s.name }}?');" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="action"     value="delete_subject">
+                                <input type="hidden" name="subject_id" value="{{ s.id }}">
+                                <button type="submit" class="delete-btn" title="Delete">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" style="text-align:center; color:var(--ink-faint); padding:20px;">None yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Shelves ── -->
+    <div>
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">Add Shelf</span></div>
+            <form method="POST" action="{{ url_for('admin.book_codes') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="add_shelf">
+                <div class="card-body">
+                    {% if shelf_error %}
+                    <div class="alert alert-error" style="margin-bottom:10px;">
+                        <span class="alert-icon">&#9888;</span><div>{{ shelf_error }}</div>
+                    </div>
+                    {% endif %}
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label class="form-label">Shelf Name</label>
+                        <input class="form-input" type="text" name="shelf_name"
+                               placeholder="e.g. A1-S3, Rack-B"
+                               maxlength="100" autocomplete="off" required>
+                        <span class="form-hint">Physical shelf identifier.</span>
+                    </div>
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label class="form-label">Description <span class="opt">(optional)</span></label>
+                        <input class="form-input" type="text" name="shelf_desc"
+                               placeholder="e.g. Top row, Aisle 1">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Shelves</span>
+                <span class="badge badge-grey">{{ shelves|length }}</span>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>#</th><th>Shelf</th><th></th></tr></thead>
+                    <tbody>
+                    {% for sh in shelves %}
+                    <tr>
+                        <td style="color:var(--ink-faint); font-size:12px;">{{ loop.index }}</td>
+                        <td>
+                            <span style="font-family:'Courier New',monospace; font-size:13px; font-weight:700;
+                                         color:#7A5A1A; background:var(--gold-pale);
+                                         padding:2px 8px; border-radius:3px;">{{ sh.name }}</span>
+                        
+                            <!-- View mode -->
+                            <div id="shelf-view-{{ sh.id }}">
+                                {% if sh.description %}
+                                <div class="code-table-desc">{{ sh.description }}</div>
+                                {% else %}
+                                <div class="code-table-desc" style="font-style:italic;">No description</div>
+                                {% endif %}
+                            </div>
+                        
+                            <!-- Edit mode (hidden by default) -->
+                            <form method="POST" action="{{ url_for('admin.book_codes') }}"
+                                  id="shelf-edit-{{ sh.id }}" style="display:none; margin-top:4px;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="action"   value="edit_shelf">
+                                <input type="hidden" name="shelf_id" value="{{ sh.id }}">
+                                <input class="form-input" type="text" name="shelf_desc"
+                                       value="{{ sh.description or '' }}"
+                                       placeholder="Description"
+                                       style="font-size:12px; padding:4px 6px; width:160px; display:inline-block;">
+                                <button type="submit" class="btn btn-primary" style="padding:3px 8px; font-size:11px;">Save</button>
+                                <button type="button" class="btn" style="padding:3px 8px; font-size:11px;"
+                                        onclick="toggleShelfEdit({{ sh.id }})">Cancel</button>
+                            </form>
+                        </td>
+                        <td style="text-align:right; white-space:nowrap;">
+                            <button type="button" class="delete-btn" title="Edit description"
+                                    style="color:var(--ink-faint);" onclick="toggleShelfEdit({{ sh.id }})">✎</button>
+                            <form method="POST" action="{{ url_for('admin.book_codes') }}"
+                                  onsubmit="return confirm('Delete shelf {{ sh.name }}?');" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="action"   value="delete_shelf">
+                                <input type="hidden" name="shelf_id" value="{{ sh.id }}">
+                                <button type="submit" class="delete-btn" title="Delete">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" style="text-align:center; color:var(--ink-faint); padding:20px;">No shelves yet.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Code format explainer -->
+<div class="card" style="margin-top:24px;">
+    <div class="card-body" style="padding:18px 24px;">
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+            <div style="font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint); white-space:nowrap;">Code Format</div>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span style="font-family:'Courier New',monospace; font-size:15px; font-weight:700; background:var(--maroon-pale); color:var(--maroon); padding:4px 12px; border-radius:4px;">TXT</span>
+                <span style="color:var(--ink-faint);">-</span>
+                <span style="font-family:'Courier New',monospace; font-size:15px; font-weight:700; background:var(--green-pale); color:var(--green); padding:4px 12px; border-radius:4px;">NAV</span>
+                <span style="color:var(--ink-faint);">-</span>
+                <span style="font-family:'Courier New',monospace; font-size:15px; font-weight:700; background:var(--gold-pale); color:#7A5A1A; padding:4px 12px; border-radius:4px;">001</span>
+                <span style="color:var(--ink-faint);">-</span>
+                <span style="font-family:'Courier New',monospace; font-size:15px; font-weight:700; background:var(--cream-dark); color:var(--ink-light); padding:4px 12px; border-radius:4px;">c.1</span>
+            </div>
+            <div style="font-size:12px; color:var(--ink-faint);">Main / Subject / Running No / Copy No</div>
+        </div>
+    </div>
+</div>
+<script>
+    function toggleShelfEdit(id) {
+        const view = document.getElementById('shelf-view-' + id);
+        const edit = document.getElementById('shelf-edit-' + id);
+        const showingEdit = edit.style.display !== 'none';
+        view.style.display = showingEdit ? '' : 'none';
+        edit.style.display  = showingEdit ? 'none' : 'block';
+    }
+</script>
+{% endblock %}

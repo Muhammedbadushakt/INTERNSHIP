@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+{% block title %}Borrow Status | Admin{% endblock %}
+{% block nav_emp_records %}active{% endblock %}
+
+{% block content %}
+<div class="page-header-row page-header">
+    <div>
+        <div class="page-eyebrow">People</div>
+        <h1 class="page-title">Borrow Status</h1>
+    </div>
+    <a href="{{ url_for('admin.employee_records', filter=filter, export='1') }}"
+       class="btn btn-ghost">↓ Export This View</a>
+</div>
+
+<!-- Summary -->
+<div class="stat-grid" style="margin-bottom:24px;">
+    <div class="stat-card stat-red">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value">{{ overdue_count }}</div>
+    </div>
+    <div class="stat-card stat-gold">
+        <div class="stat-label">Active Borrows</div>
+        <div class="stat-value">{{ active_count }}</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-label">No Active Borrow</div>
+        <div class="stat-value">{{ free_count }}</div>
+    </div>
+</div>
+
+<!-- Filter tabs -->
+<div class="tabs">
+    <a href="{{ url_for('admin.employee_records', filter='all') }}"
+       class="tab-link {% if filter == 'all' %}active{% endif %}">All</a>
+    <a href="{{ url_for('admin.employee_records', filter='overdue') }}"
+       class="tab-link {% if filter == 'overdue' %}active{% endif %}">Overdue</a>
+    <a href="{{ url_for('admin.employee_records', filter='active') }}"
+       class="tab-link {% if filter == 'active' %}active{% endif %}">Active</a>
+    <a href="{{ url_for('admin.employee_records', filter='free') }}"
+       class="tab-link {% if filter == 'free' %}active{% endif %}">Free</a>
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr>
+                <th>Status</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Contact</th>
+                <th>Account</th>
+                <th></th>
+            </tr></thead>
+            <tbody>
+            {% for e in display %}
+            {% set ind = namespace(val='green') %}
+            {% set active_recs = e.records | selectattr('status','eq','APPROVED') | list %}
+            {% if active_recs %}
+                {% if active_recs | selectattr('expected_at') | rejectattr('expected_at', 'gt', now) | list %}
+                    {% set ind.val = 'red' %}
+                {% else %}
+                    {% set ind.val = 'orange' %}
+                {% endif %}
+            {% endif %}
+            <tr>
+                <td><span class="dot dot-{{ ind.val }}"></span></td>
+                <td style="font-family:'Courier New',monospace; font-size:13px; font-weight:600; color:var(--maroon);">{{ e.employee_code }}</td>
+                <td style="font-weight:600;">{{ e.name }}</td>
+                <td style="color:var(--ink-light);">{{ e.department or '—' }}</td>
+                <td style="color:var(--ink-light);">{{ e.designation or '—' }}</td>
+                <td style="color:var(--ink-light);">{{ e.contact_number or '—' }}</td>
+                <td>
+                    <span class="badge {% if e.status=='ACTIVE' %}badge-green{% else %}badge-red{% endif %}">
+                        {{ e.status }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('admin.employee_detail', employee_code=e.employee_code) }}"
+                       class="btn btn-ghost btn-sm">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center; color:var(--ink-faint); padding:32px;">No employees in this filter.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="margin-top:12px; display:flex; gap:16px; flex-wrap:wrap;">
+    <span style="font-size:12px; color:var(--ink-faint); display:flex; align-items:center; gap:6px;"><span class="dot dot-green"></span> No active borrows</span>
+    <span style="font-size:12px; color:var(--ink-faint); display:flex; align-items:center; gap:6px;"><span class="dot dot-orange"></span> Active borrow — on time</span>
+    <span style="font-size:12px; color:var(--ink-faint); display:flex; align-items:center; gap:6px;"><span class="dot dot-red"></span> Overdue return</span>
+</div>
+{% endblock %}

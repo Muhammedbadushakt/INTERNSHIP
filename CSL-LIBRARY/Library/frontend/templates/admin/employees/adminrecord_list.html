@@ -1,0 +1,139 @@
+{% extends "admin/base.html" %}
+{% block title %}Admin Issued Books | Admin{% endblock %}
+{% block nav_admin_records %}active{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <div>
+        <div class="page-eyebrow">Direct Issue</div>
+        <h1 class="page-title">Admin Issued Books</h1>
+        <p class="page-subtitle">All books issued directly by admin without the request flow.</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center; padding-top:6px;">
+        <a href="{{ url_for('admin.direct_issue') }}" class="btn btn-primary">📤 Issue a Book</a>
+        {% if records %}
+        <button type="button" class="btn btn-danger" onclick="openDeleteModal()">🗑 Delete All Records</button>
+        {% endif %}
+    </div>
+</div>
+
+{% if records %}
+<div class="card" style="margin-top:4px;">
+    <div class="card-body" style="padding:0;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Issued To</th>
+                    <th>Book Code</th>
+                    <th>Issued On</th>
+                    <th>Expected Return</th>
+                    <th>Returned On</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td style="color:var(--ink-faint); font-size:12px;">{{ record.id }}</td>
+                    <td style="font-weight:500;">{{ record.name }}</td>
+                    <td style="font-family:'Courier New',monospace; font-size:12.5px; color:var(--maroon); font-weight:700;">{{ record.book_id }}</td>
+                    <td style="font-size:13px;">
+                        {% if record.issued_at %}{{ record.issued_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                    </td>
+                    <td style="font-size:13px; color:#B91C1C; font-weight:600;">
+                        {% if record.expected_at %}{{ record.expected_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                    </td>
+                    <td style="font-size:13px;">
+                        {% if record.returned_at %}{{ record.returned_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if record.status == 'ISSUED' %}
+                            <span class="badge badge-gold">Issued</span>
+                        {% elif record.status == 'RETURNED' %}
+                            <span class="badge badge-green">Returned</span>
+                        {% else %}
+                            <span class="badge badge-grey">{{ record.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:12.5px; color:var(--ink-light); font-style:italic; max-width:160px;">
+                        {{ record.remarks or '—' }}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.adminrecord', id=record.id) }}" class="btn btn-ghost btn-sm">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="empty-state" style="margin-top:40px;">
+    <div style="font-size:2rem; margin-bottom:10px;">📭</div>
+    <div style="font-size:15px; font-weight:600; color:var(--ink);">No records yet</div>
+    <div style="font-size:13px; color:var(--ink-faint); margin-top:4px;">Issue a book directly to get started.</div>
+    <a href="{{ url_for('admin.direct_issue') }}" class="btn btn-primary" style="margin-top:16px;">📤 Issue a Book</a>
+</div>
+{% endif %}
+
+{# ── Delete All Modal ── #}
+<div id="deleteModal" style="
+    display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(255, 255, 255, 0.45); align-items:center; justify-content:center;">
+    <div style="
+        background:var(--surface); border-radius:12px; padding:32px 28px;
+        max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.18);
+        display:flex; flex-direction:column; gap:16px;">
+
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.5rem;">⚠️</span>
+            <span style="font-size:16px; font-weight:700; color:var(--ink);">Delete All Admin Records?</span>
+        </div>
+
+        <p style="font-size:13.5px; color:var(--ink-light); margin:0; line-height:1.6;">
+            This will permanently delete <strong>all {{ records|length }} admin-issued record{{ 's' if records|length != 1 }}</strong>.
+            Book availability counts will <strong>not</strong> be automatically adjusted.
+            This action cannot be undone.
+        </p>
+
+        <p style="font-size:13px; color:var(--ink-faint); margin:0;">
+            Type <strong>DELETE</strong> below to confirm.
+        </p>
+
+        <input id="deleteConfirmInput" class="form-input" type="text"
+               placeholder="Type DELETE to confirm"
+               oninput="document.getElementById('confirmDeleteBtn').disabled = this.value !== 'DELETE';">
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:4px;">
+            <button type="button" class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+            <form method="POST" action="{{ url_for('admin.delete_all_admin_records') }}" style="margin:0;">
+                <button id="confirmDeleteBtn" type="submit" class="btn btn-danger" disabled>
+                    🗑 Delete All
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openDeleteModal() {
+        document.getElementById('deleteConfirmInput').value = '';
+        document.getElementById('confirmDeleteBtn').disabled = true;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+    // Close on backdrop click
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+</script>
+{% endblock %}

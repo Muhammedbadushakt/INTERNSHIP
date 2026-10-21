@@ -1,0 +1,13 @@
+flask
+flask_sqlalchemy
+flask-jwt-extended
+openpyxl
+reportlab
+flask_cors
+flask_mail
+python-dotenv
+psycopg2
+flask_migrate
+ldap3
+flask-login
+functools

@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard | Admin{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">Admin Panel</div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Welcome back. Here's a quick look at the library.</p>
+</div>
+
+{% set total_books     = books_count     if books_count     is defined else 0 %}
+{% set total_employees = employees_count if employees_count is defined else 0 %}
+{% set pending_books   = pending_count   if pending_count   is defined else 0 %}
+{% set overdue_count   = overdue         if overdue         is defined else 0 %}
+
+<div class="stat-grid">
+    <div class="stat-card stat-maroon">
+        <div class="stat-label">Total Books</div>
+        <div class="stat-value">{{ total_books }}</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-label">Active Employees</div>
+        <div class="stat-value">{{ total_employees }}</div>
+    </div>
+    <div class="stat-card stat-gold">
+        <div class="stat-label">Pending Requests</div>
+        <div class="stat-value">{{ pending_books }}</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-label">Overdue Returns</div>
+        <div class="stat-value">{{ overdue_count }}</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; flex-wrap:wrap;">
+
+    <!-- Quick actions -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Quick Actions</span>
+        </div>
+        <div class="card-body" style="display:flex; flex-direction:column; gap:10px;">
+            <a href="{{ url_for('admin.add_book') }}" class="btn btn-primary">＋ &nbsp;Add New Book</a>
+            <a href="{{ url_for('admin.book_approval') }}" class="btn btn-ghost">✓ &nbsp;Review Book Requests</a>
+            <a href="{{ url_for('admin.employee_approval') }}" class="btn btn-ghost">✓ &nbsp;Review New Accounts</a>
+            <a href="{{ url_for('admin.manage_employee') }}" class="btn btn-ghost">⚙ &nbsp;Manage Employees</a>
+            <a href="{{ url_for('admin.export_books') }}" class="btn btn-ghost">↓ &nbsp;Export Book List</a>
+        </div>
+    </div>
+
+    <!-- Navigation overview -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Sections</span>
+        </div>
+        <div class="card-body" style="display:flex; flex-direction:column; gap:8px;">
+            <a href="{{ url_for('admin.books') }}" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; background:var(--cream); text-decoration:none; color:var(--ink); font-size:13.5px; font-weight:500; transition:background 0.13s;">
+                <span style="font-size:18px;">📚</span>
+                <div><div style="font-weight:600;">Books</div><div style="font-size:12px; color:var(--ink-faint);">Browse, search and filter the catalogue</div></div>
+            </a>
+            <a href="{{ url_for('admin.employees') }}" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; background:var(--cream); text-decoration:none; color:var(--ink); font-size:13.5px; font-weight:500; transition:background 0.13s;">
+                <span style="font-size:18px;">👥</span>
+                <div><div style="font-weight:600;">Employees & Guests</div><div style="font-size:12px; color:var(--ink-faint);">View borrow history and status</div></div>
+            </a>
+            <a href="{{ url_for('admin.employee_records') }}" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; background:var(--cream); text-decoration:none; color:var(--ink); font-size:13.5px; font-weight:500; transition:background 0.13s;">
+                <span style="font-size:18px;">📋</span>
+                <div><div style="font-weight:600;">Borrow Status</div><div style="font-size:12px; color:var(--ink-faint);">Active, overdue and free borrowers</div></div>
+            </a>
+            <a href="{{ url_for('admin.book_codes') }}" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; background:var(--cream); text-decoration:none; color:var(--ink); font-size:13.5px; font-weight:500; transition:background 0.13s;">
+                <span style="font-size:18px;">⊕</span>
+                <div><div style="font-weight:600;">Code Maker</div><div style="font-size:12px; color:var(--ink-faint);">Manage Main and Subject categories</div></div>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

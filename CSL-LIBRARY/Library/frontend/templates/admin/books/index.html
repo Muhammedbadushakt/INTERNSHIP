@@ -1,0 +1,418 @@
+{% extends "admin/base.html" %}
+{% block title %}Books | Admin{% endblock %}
+{% block nav_books %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* ── Page Layout ─────────────────────────────────────── */
+    .page-header-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    /* ── Filter Bar ──────────────────────────────────────── */
+    .filter-bar {
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        margin-bottom: 20px;
+    }
+
+    .filter-bar-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+    }
+
+    /* Left group: dropdowns */
+    .filter-left {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+        flex: 1;
+    }
+
+    /* Right group: search */
+    .filter-right {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        flex-shrink: 0;
+    }
+
+    .filter-bar .form-group  { margin: 0; }
+    .filter-bar .form-input,
+    .filter-bar .form-select { height: 36px; font-size: 13px; }
+
+    .filter-group-search {
+        display: flex;
+        gap: 0;
+        align-items: flex-end;
+    }
+
+    .filter-group-search .form-group:first-child .form-select {
+        border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+        border-right: none;
+        min-width: 110px;
+    }
+
+    .filter-group-search .form-group:last-child .form-input {
+        border-radius: 0;
+        min-width: 200px;
+    }
+
+    .filter-group-search + .btn {
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        height: 36px;
+        align-self: flex-end;
+    }
+
+    /* ── Book Grid ───────────────────────────────────────── */
+    .book-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 16px;
+    }
+
+    .book-card {
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        transition: box-shadow 0.15s, transform 0.15s;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .book-card:hover {
+        box-shadow: var(--shadow-card);
+        transform: translateY(-2px);
+    }
+
+    .book-cover {
+        aspect-ratio: 3 / 4;
+        background: var(--cream-dark);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .book-cover img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+
+    .book-cover-placeholder {
+        font-size: 36px;
+        color: var(--cream-border);
+    }
+
+    .book-info {
+        padding: 12px 14px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .book-code {
+        font-family: 'Courier New', monospace;
+        font-size: 10.5px;
+        color: var(--ink-faint);
+        letter-spacing: 0.05em;
+    }
+
+    /* Running code shown larger, copy suffix dimmed */
+    .book-code-base   { font-weight: 700; color: var(--ink-light); }
+    .book-code-copies { font-weight: 400; color: var(--ink-faint); }
+
+    .book-title {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .book-author {
+        font-size: 12px;
+        color: var(--ink-light);
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .book-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        border-top: 1px solid var(--cream-border);
+        background: var(--cream);
+        gap: 6px;
+    }
+
+    .book-footer-left {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    /* Availability */
+    .avail-badge {
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .avail-yes { color: var(--green); }
+    .avail-no  { color: #B91C1C; }
+
+    /* Copy count pill */
+    .copy-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 10.5px;
+        color: var(--ink-faint);
+        background: var(--cream-dark);
+        border-radius: 20px;
+        padding: 1px 7px;
+        font-weight: 500;
+        white-space: nowrap;
+        width: fit-content;
+    }
+    .copy-pill-dot {
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: var(--ink-faint);
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-row page-header">
+    <div>
+        <div class="page-eyebrow">Books</div>
+        <h1 class="page-title">Book Catalogue</h1>
+        <p class="page-subtitle">
+            {{ grouped_count }} title{{ 's' if grouped_count != 1 else '' }}
+            &nbsp;·&nbsp;
+            {{ books.total }} cop{{ 'y' if books.total == 1 else 'ies' }} total
+        </p>
+    </div>
+    <div style="display:flex; gap:8px; flex-shrink:0;">
+        <a href="{{ url_for('admin.add_book') }}"     class="btn btn-primary">＋ Add Book</a>
+        <a href="{{ url_for('admin.export_books') }}" class="btn btn-ghost">↓ Export</a>
+    </div>
+</div>
+
+<!-- ── Filters ───────────────────────────────────────── -->
+<form method="GET" action="{{ url_for('admin.books') }}">
+    <div class="filter-bar">
+        <div class="filter-bar-inner">
+
+            <!-- Left: category dropdowns + availability -->
+            <div class="filter-left">
+                <div class="form-group">
+                    <label class="form-label" style="font-size: 18px;">Filter-by</label>
+                    <label class="form-label">Main Category</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="main_id">
+                            <option value="">All</option>
+                            {% for m in mains %}
+                            <option value="{{ m.id }}"
+                                {% if main_id == m.id|string %}selected{% endif %}>
+                                {{ m.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="subject_id">
+                            <option value="">All</option>
+                            {% for s in subjects %}
+                            <option value="{{ s.id }}"
+                                {% if subject_id == s.id|string %}selected{% endif %}>
+                                {{ s.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Availability</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="available">
+                            <option value="">All</option>
+                            <option value="1" {% if available=='1' %}selected{% endif %}>
+                                Available only
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: search by + keyword + button (joined) -->
+            <div class="filter-right">
+                <div class="filter-group-search">
+                    <div class="form-group">
+                        <label class="form-label" style="font-size: 15px;">Search by</label>
+                        <div class="select-wrap">
+                            <select class="form-select" name="search_by">
+                                <option value="title"   {% if search_by=='title'   %}selected{% endif %}>Title</option>
+                                <option value="code"    {% if search_by=='code'    %}selected{% endif %}>Code</option>
+                                <option value="author"  {% if search_by=='author'  %}selected{% endif %}>Author</option>
+                                <option value="keyword" {% if search_by=='keyword' %}selected{% endif %}>Keyword</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label"style="font-size: 15px;">Keyword</label>
+                        <div class="search-input-wrap">
+                            <span class="search-icon">⌕</span>
+                            <input class="form-input" type="text" name="search"
+                                   value="{{ search }}" placeholder="Search books…"
+                                   style="min-width:190px;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+                {% if search or main_id or subject_id or available %}
+                <a href="{{ url_for('admin.books') }}" class="btn btn-ghost"
+                   style="height:36px; align-self:flex-end;">Clear</a>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<!-- ── Book Grid (grouped by running code) ──────────── -->
+{% if grouped_books %}
+<div class="book-grid">
+    {% for group in grouped_books %}
+    {# group = {base_code, rep (representative Book), total_copies, avail_copies, codes} #}
+    {% set rep = group.rep %}
+    <div class="book-card">
+
+        <!-- Cover (from representative copy) -->
+        <div class="book-cover">
+            {% if rep.cover_image and rep.cover_image != 'DEFAULTCOVER.png' %}
+            <img src="{{ url_for('static', filename='Book-cover/' ~ rep.cover_image) }}"
+                 alt="{{ rep.title }}">
+            {% elif rep.cover_image == 'DEFAULTCOVER.png' %}
+            <img src="{{ url_for('static', filename='Book-cover/DEFAULTCOVER.png') }}"
+                 alt="{{ rep.title }}">
+            {% else %}
+            <span class="book-cover-placeholder">📖</span>
+            {% endif %}
+        </div>
+
+        <!-- Info -->
+        <div class="book-info">
+            <div class="book-code">
+                <span class="book-code-base">{{ group.base_code }}</span>
+                <span class="book-code-copies"> · c.1–c.{{ group.total_copies }}</span>
+            </div>
+            <div class="book-title">{{ rep.title }}</div>
+            {% if rep.author %}
+            <div class="book-author">{{ rep.author }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Footer: availability + copy pill + edit -->
+        <div class="book-footer">
+            <div class="book-footer-left">
+                <span class="avail-badge {% if group.avail_copies > 0 %}avail-yes{% else %}avail-no{% endif %}">
+                    {% if group.avail_copies > 0 %}
+                        {{ group.avail_copies }} Available
+                    {% else %}
+                        Out of Stock
+                    {% endif %}
+                </span>
+                <span class="copy-pill">
+                    <span class="copy-pill-dot"></span>
+                    {{ group.total_copies }} cop{{ 'y' if group.total_copies == 1 else 'ies' }}
+                </span>
+            </div>
+            <!-- Edit links to the first physical copy -->
+            <a href="{{ url_for('admin.edit_book') }}?code={{ rep.code }}"
+               class="btn btn-ghost btn-sm">Edit</a>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ── Pagination ────────────────────────────────────── -->
+{% if books.pages > 1 %}
+<div style="margin-top:28px; display:flex; justify-content:center;">
+    <div class="pagination">
+        {% if books.has_prev %}
+        <a href="{{ url_for('admin.books', page=books.prev_num,
+                   search=search, search_by=search_by,
+                   main_id=main_id, subject_id=subject_id,
+                   available=available) }}" class="page-link">‹</a>
+        {% else %}
+        <span class="page-link disabled">‹</span>
+        {% endif %}
+
+        {% for p in books.iter_pages(left_edge=1, right_edge=1,
+                                     left_current=2, right_current=2) %}
+            {% if p %}
+            <a href="{{ url_for('admin.books', page=p,
+                       search=search, search_by=search_by,
+                       main_id=main_id, subject_id=subject_id,
+                       available=available) }}"
+               class="page-link {% if p == books.page %}active{% endif %}">{{ p }}</a>
+            {% else %}
+            <span class="page-link disabled">…</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if books.has_next %}
+        <a href="{{ url_for('admin.books', page=books.next_num,
+                   search=search, search_by=search_by,
+                   main_id=main_id, subject_id=subject_id,
+                   available=available) }}" class="page-link">›</a>
+        {% else %}
+        <span class="page-link disabled">›</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div style="text-align:center; padding:64px 24px; color:var(--ink-faint);">
+    <div style="font-size:40px; margin-bottom:12px;">📭</div>
+    <div style="font-size:15px; font-weight:600; color:var(--ink-light); margin-bottom:6px;">
+        No books found
+    </div>
+    <div style="font-size:13px;">
+        Try adjusting your filters or
+        <a href="{{ url_for('admin.add_book') }}"
+           style="color:var(--maroon); font-weight:600;">add a new book</a>.
+    </div>
+</div>
+{% endif %}
+{% endblock %}

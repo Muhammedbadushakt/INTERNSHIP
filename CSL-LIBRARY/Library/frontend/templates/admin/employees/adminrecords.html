@@ -1,0 +1,112 @@
+{% extends "admin/base.html" %}
+{% block title %}Record #{{ details.id }} | Admin{% endblock %}
+{% block nav_admin_records %}active{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px;">
+    <a href="{{ url_for('admin.admin_records_list') }}" class="btn btn-ghost btn-sm">← Back to Admin Issued Books</a>
+</div>
+
+<div class="page-header">
+    <div class="page-eyebrow">Direct Issue Record</div>
+    <h1 class="page-title">{{ details.name }}</h1>
+    <p class="page-subtitle">
+        Book <span style="font-family:'Courier New',monospace; color:var(--maroon); font-weight:600;">{{ details.book_id }}</span>
+        &nbsp;·&nbsp; Record #{{ details.id }}
+    </p>
+</div>
+
+{% if msg %}
+    {% if 'updated' in msg.lower() %}
+    <div class="alert alert-success"><span class="alert-icon">✓</span><div>{{ msg }}</div></div>
+    {% else %}
+    <div class="alert alert-error"><span class="alert-icon">⚠</span><div>{{ msg }}</div></div>
+    {% endif %}
+{% endif %}
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; max-width:760px;">
+
+    {# ── Details Card ── #}
+    <div class="card">
+        <div class="card-header"><span class="card-title">Details</span></div>
+        <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px;">Person</div>
+                <div style="font-size:13.5px; font-weight:500; color:var(--ink);">{{ details.name }}</div>
+            </div>
+
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px;">Book Code</div>
+                <div style="font-family:'Courier New',monospace; font-size:13.5px; font-weight:700; color:var(--maroon);">{{ details.book_id }}</div>
+            </div>
+
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px;">Issued On</div>
+                <div style="font-size:13.5px; color:var(--ink);">
+                    {% if details.issued_at %}{{ details.issued_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px;">Expected Return</div>
+                <div style="font-size:13.5px; color:#B91C1C; font-weight:600;">
+                    {% if details.expected_at %}{{ details.expected_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px;">Returned On</div>
+                <div style="font-size:13.5px; color:var(--ink);">
+                    {% if details.returned_at %}{{ details.returned_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px;">Issued By</div>
+                <div style="font-family:'Courier New',monospace; font-size:12.5px; color:var(--ink-light);">{{ details.employee_id }}</div>
+            </div>
+
+            {% if details.remarks %}
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px;">Remarks</div>
+                <div style="font-size:13px; color:var(--ink-light); font-style:italic;">{{ details.remarks }}</div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {# ── Status Card ── #}
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Status</span>
+            {% if details.status == 'ISSUED' %}
+                <span class="badge badge-gold">Issued</span>
+            {% elif details.status == 'RETURNED' %}
+                <span class="badge badge-green">Returned</span>
+            {% else %}
+                <span class="badge badge-grey">{{ details.status }}</span>
+            {% endif %}
+        </div>
+        <form method="POST" action="{{ url_for('admin.adminrecord', id=details.id) }}" onsubmit="return confirm('Are You Sure To Change the Status? Warning These Method Can be Undone')">
+            <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+                <div class="form-group full-width" style="margin-bottom:0;">
+                    <label class="form-label">Update Status</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="status">
+                            <option value="ISSUED"    {% if details.status == 'ISSUED'    %}selected{% endif %}>Issued</option>
+                            <option value="RETURNED"  {% if details.status == 'RETURNED'  %}selected{% endif %}>Returned</option>
+                        </select>
+                    </div>
+                    <div class="form-hint">Setting to "Returned" will record today's date and restore the book's availability.</div>
+                </div>
+            </div>
+            <div class="card-footer" style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Save Status</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

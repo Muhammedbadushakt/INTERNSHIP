@@ -1,0 +1,296 @@
+{% extends "employee/base.html" %}
+{% block title %}Return Book | CSL Library{% endblock %}
+{% block nav_my_books %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* ─── Breadcrumb ────────────────────────────────────── */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        color: var(--ink-faint);
+        margin-bottom: 28px;
+    }
+    .breadcrumb a { color: var(--ink-light); text-decoration: none; transition: color 0.15s; }
+    .breadcrumb a:hover { color: var(--maroon); }
+    .breadcrumb-sep { opacity: 0.4; }
+
+    /* ─── Centered narrow layout ────────────────────────── */
+    .return-wrap {
+        max-width: 560px;
+        margin: 0 auto;
+    }
+
+    /* ─── Book Summary Card ─────────────────────────────── */
+    .book-summary {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-soft);
+    }
+    .return-thumb {
+        width: 58px;
+        height: 78px;
+        border-radius: 4px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: var(--cream-dark);
+        position: relative;
+    }
+    .return-thumb img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .return-thumb-ph {
+        width: 100%; height: 100%;
+        background: linear-gradient(160deg, var(--cream-dark) 0%, #E0DAD0 100%);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px; opacity: 0.45;
+        position: relative;
+    }
+    .return-thumb-ph::before {
+        content: '';
+        position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+        background: var(--maroon); opacity: 0.3;
+    }
+    .book-summary-info { min-width: 0; }
+    .book-summary-title {
+        font-family: var(--font-display);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.3;
+        margin-bottom: 4px;
+    }
+    .book-summary-code {
+        font-family: 'Courier New', monospace;
+        font-size: 11.5px;
+        color: var(--ink-faint);
+        letter-spacing: 0.04em;
+        margin-bottom: 8px;
+    }
+    .book-summary-dates {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+    .date-item { }
+    .date-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--ink-faint);
+        margin-bottom: 1px;
+    }
+    .date-val {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink);
+    }
+    .date-val.overdue { color: #B83232; }
+    .date-val.ok { color: var(--green); }
+
+    /* ─── Confirm Panel ─────────────────────────────────── */
+    .confirm-panel {
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .confirm-panel-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--cream-border);
+        background: var(--cream);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .confirm-panel-icon {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: var(--maroon-pale);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+    .confirm-panel-title {
+        font-family: var(--font-display);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink);
+    }
+    .confirm-panel-body { padding: 24px; }
+
+    /* ─── Info list ─────────────────────────────────────── */
+    .return-info-list {
+        list-style: none;
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .return-info-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ink-light);
+        line-height: 1.5;
+    }
+    .return-info-list li::before {
+        content: '·';
+        color: var(--maroon);
+        font-weight: 700;
+        font-size: 16px;
+        line-height: 1.2;
+        flex-shrink: 0;
+    }
+
+    /* ─── Overdue notice ────────────────────────────────── */
+    .overdue-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: var(--red-pale);
+        border: 1px solid rgba(184,50,50,0.2);
+        border-radius: var(--radius-md);
+        padding: 13px 16px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        color: #B83232;
+        line-height: 1.5;
+    }
+    .overdue-notice-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── Actions ───────────────────────────────────────── */
+    .confirm-actions {
+        display: flex;
+        gap: 10px;
+        padding-top: 4px;
+    }
+    .confirm-actions .btn { flex: 1; justify-content: center; }
+
+    @media (max-width: 560px) {
+        .book-summary { flex-direction: column; gap: 14px; }
+        .confirm-actions { flex-direction: column-reverse; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Breadcrumb ── #}
+<div class="breadcrumb">
+    <a href="{{ url_for('employee.my_books') }}">My Books</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>Return Book</span>
+</div>
+
+<div class="return-wrap">
+
+    {# ── Page Header ── #}
+    <div class="page-header" style="margin-bottom:24px;">
+        <div class="page-eyebrow">Return Request</div>
+        <h1 class="page-title" style="font-size:22px;">Confirm Return</h1>
+        <p class="page-subtitle">Review the details below before submitting your return request.</p>
+    </div>
+
+    {# ── Book Summary Card ── #}
+    <div class="book-summary">
+        <div class="return-thumb">
+            {% set book = record.book if record.book is defined else None %}
+            {% if book and book.cover_image %}
+            <img src="/storage/Book-cover/{{ book.cover_image }}"
+                 alt="{{ book.title }}"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="return-thumb-ph" style="display:none;">📖</div>
+            {% else %}
+            <div class="return-thumb-ph">📖</div>
+            {% endif %}
+        </div>
+
+        <div class="book-summary-info">
+            <div class="book-summary-title">
+                {% if book %}{{ book.title }}{% else %}{{ record.book_id }}{% endif %}
+            </div>
+            <div class="book-summary-code">{{ record.book_id }}</div>
+
+            <div class="book-summary-dates">
+                {% if record.issued_at %}
+                <div class="date-item">
+                    <div class="date-label">Issued</div>
+                    <div class="date-val">{{ record.issued_at.strftime('%d %b %Y') }}</div>
+                </div>
+                {% endif %}
+                {% if record.expected_at %}
+                {% set days_left = (record.expected_at - now).days if now is defined else 0 %}
+                <div class="date-item">
+                    <div class="date-label">Due Date</div>
+                    <div class="date-val {% if days_left < 0 %}overdue{% else %}ok{% endif %}">
+                        {{ record.expected_at.strftime('%d %b %Y') }}
+                        {% if days_left < 0 %}
+                        <span style="font-size:11px; font-weight:500;">
+                            ({{ days_left|abs }}d overdue)
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Overdue notice ── #}
+    {% if record.expected_at %}
+    {% set days_left = (record.expected_at - now).days if now is defined else 1 %}
+    {% if days_left < 0 %}
+    <div class="overdue-notice">
+        <span class="overdue-notice-icon">⚠</span>
+        <div>
+            This book is <strong>{{ days_left|abs }} day{{ 's' if days_left|abs != 1 }} overdue.</strong>
+            Please hand it to the librarian promptly. Late returns may affect future borrowing.
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {# ── Confirm Panel ── #}
+    <div class="confirm-panel">
+        <div class="confirm-panel-header">
+            <div class="confirm-panel-icon">↩</div>
+            <div class="confirm-panel-title">Submit Return Request</div>
+        </div>
+        <div class="confirm-panel-body">
+
+            <ul class="return-info-list">
+                <li>Your return request will be sent to the admin for confirmation.</li>
+                <li>The book will be marked as returned only after admin approval.</li>
+                <li>Please physically hand the book to the librarian when submitting.</li>
+            </ul>
+
+            <form method="POST" action="{{ url_for('employee.return_book', record_id=record.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="confirm-actions">
+                    <a href="{{ url_for('employee.my_books') }}" class="btn btn-ghost">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        Confirm Return
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,315 @@
+{% extends "admin/base.html" %}
+{% block title %}Book Approvals | Admin{% endblock %}
+{% block nav_book_approval %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .tab-btn { color: var(--ink-light); }
+    .tab-btn.active-tab {
+        color: var(--maroon);
+        border-bottom-color: var(--maroon) !important;
+    }
+    .date-edit-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .date-display {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--maroon);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .date-edit-btn {
+        font-size: 10.5px;
+        color: var(--ink-faint);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+    .date-edit-btn:hover { color: var(--maroon); }
+    .date-input-row {
+        display: none;
+        align-items: center;
+        gap: 5px;
+        margin-top: 2px;
+    }
+    .date-input-row.visible { display: flex; }
+    .date-input-row .form-input {
+        height: 28px;
+        font-size: 11.5px;
+        padding: 0 6px;
+        width: 130px;
+    }
+    .no-date-label {
+        font-size: 12px;
+        color: var(--ink-faint);
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">Approvals</div>
+    <h1 class="page-title">Book Approvals</h1>
+    <p class="page-subtitle">
+        {{ pending|length }} borrow request{{ 's' if pending|length != 1 }} &nbsp;·&nbsp;
+        {{ pending_returns|length }} return request{{ 's' if pending_returns|length != 1 }}
+    </p>
+</div>
+
+{# ── Tab Bar ────────────────────────────────────────────────────────────── #}
+<div style="display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:24px;">
+    <button onclick="switchTab('borrow')" id="tab-borrow"
+            style="padding:10px 22px; font-size:13.5px; font-weight:600; border:none;
+                   background:none; cursor:pointer; border-bottom:3px solid transparent;
+                   margin-bottom:-2px; transition:all .15s;"
+            class="tab-btn active-tab">
+        Borrow Requests
+        {% if pending %}
+        <span style="background:var(--maroon); color:#fff; border-radius:99px;
+                     font-size:11px; padding:1px 7px; margin-left:6px;">
+            {{ pending|length }}
+        </span>
+        {% endif %}
+    </button>
+    <button onclick="switchTab('return')" id="tab-return"
+            style="padding:10px 22px; font-size:13.5px; font-weight:600; border:none;
+                   background:none; cursor:pointer; border-bottom:3px solid transparent;
+                   margin-bottom:-2px; transition:all .15s;"
+            class="tab-btn">
+        Return Requests
+        {% if pending_returns %}
+        <span style="background:var(--maroon); color:#fff; border-radius:99px;
+                     font-size:11px; padding:1px 7px; margin-left:6px;">
+            {{ pending_returns|length }}
+        </span>
+        {% endif %}
+    </button>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{#  TAB 1 — BORROW REQUESTS                                                  #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+<div id="pane-borrow">
+{% if pending %}
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr>
+                <th>Requested On</th>
+                <th>Employee / Guest</th>
+                <th>Book Code</th>
+                <th>Title</th>
+                <th>Return By</th>
+                <th>Actions</th>
+            </tr></thead>
+            <tbody>
+            {% for r in pending %}
+            <tr>
+                {# ── Requested On ── #}
+                <td style="font-size:12px; color:var(--ink-light); white-space:nowrap;">
+                    {% if r.issued_at %}{{ r.issued_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                </td>
+
+                {# ── Employee / Guest ── #}
+                <td>
+                    <div style="font-weight:600; font-size:13.5px;">
+                        {% if r.employee %}{{ r.employee.name }}
+                        {% elif r.guest %}{{ r.guest.name }}
+                            <span class="badge badge-grey" style="font-size:10px;">guest</span>
+                        {% else %}—{% endif %}
+                    </div>
+                    <div style="font-size:11.5px; font-family:'Courier New',monospace; color:var(--ink-faint);">
+                        {% if r.employee %}{{ r.employee.employee_code }}{% endif %}
+                    </div>
+                </td>
+
+                {# ── Book Code ── #}
+                <td style="font-family:'Courier New',monospace; font-size:12.5px;
+                           color:var(--maroon); font-weight:600;">
+                    {{ r.book.code if r.book else '—' }}
+                </td>
+
+                {# ── Title ── #}
+                <td style="font-size:13px; max-width:200px;">
+                    {{ r.book.title if r.book else '—' }}
+                </td>
+
+                {# ── Return By (editable date) ── #}
+                <td>
+                    {#
+                        The approve form lives here so the date input is inside it.
+                        The Approve button in the Actions cell references this form via form="approve-form-N".
+                    #}
+                    <form method="POST"
+                          action="{{ url_for('admin.approve_book', record_id=r.id) }}"
+                          id="approve-form-{{ r.id }}" onsubmit="return confirm('Approve these Book?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                        <div class="date-edit-wrap">
+
+                            {# Date display row #}
+                            <div id="date-display-{{ r.id }}" class="date-display">
+                                {% if r.expected_at %}
+                                    📅 {{ r.expected_at.strftime('%d %b %Y') }}
+                                    <span style="font-size:10.5px; font-weight:400;
+                                                 color:var(--ink-faint);">(requested)</span>
+                                {% else %}
+                                    <span class="no-date-label">No date set</span>
+                                {% endif %}
+                            </div>
+
+                            {# Edit toggle button #}
+                            <button type="button" class="date-edit-btn"
+                                    onclick="toggleDateEdit({{ r.id }})">
+                                ✎ Edit return date
+                            </button>
+
+                            {# Hidden date input row — shown on edit #}
+                            <div id="date-input-row-{{ r.id }}" class="date-input-row">
+                                <input class="form-input" type="date" name="expected_date"
+                                       id="date-input-{{ r.id }}"
+                                       value="{{ r.expected_at.strftime('%Y-%m-%d') if r.expected_at else '' }}"
+                                       min="{{ now.strftime('%Y-%m-%d') }}">
+                                <button type="button" class="date-edit-btn"
+                                        style="color:#B91C1C;"
+                                        onclick="cancelDateEdit({{ r.id }})">✕</button>
+                            </div>
+
+                        </div>
+                    </form>
+                </td>
+
+                {# ── Actions ── #}
+                <td>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button type="submit" form="approve-form-{{ r.id }}"
+                                class="btn btn-primary btn-sm">✓ Approve</button>
+                        <form method="POST"
+                              action="{{ url_for('admin.reject_book', record_id=r.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Reject this request?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-danger btn-sm">✕ Reject</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div style="text-align:center; padding:64px 24px; color:var(--ink-faint);">
+    <div style="font-size:40px; margin-bottom:12px;">✓</div>
+    <div style="font-size:15px; font-weight:600; color:var(--ink-light); margin-bottom:6px;">All clear</div>
+    <div style="font-size:13px;">No pending borrow requests.</div>
+</div>
+{% endif %}
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{#  TAB 2 — RETURN REQUESTS                                                  #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+<div id="pane-return" style="display:none;">
+{% if pending_returns %}
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr>
+                <th>Issued</th>
+                <th>Return Requested</th>
+                <th>Employee / Guest</th>
+                <th>Book Code</th>
+                <th>Title</th>
+                <th>Actions</th>
+            </tr></thead>
+            <tbody>
+            {% for r in pending_returns %}
+            <tr>
+                <td style="font-size:12px; color:var(--ink-light); white-space:nowrap;">
+                    {% if r.issued_at %}{{ r.issued_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                </td>
+                <td style="font-size:12px; white-space:nowrap;">
+                    {% if r.returned_at %}{{ r.returned_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                </td>
+                <td>
+                    <div style="font-weight:600; font-size:13.5px;">
+                        {% if r.employee %}{{ r.employee.name }}
+                        {% elif r.guest %}{{ r.guest.name }}
+                            <span class="badge badge-grey" style="font-size:10px;">guest</span>
+                        {% else %}—{% endif %}
+                    </div>
+                    <div style="font-size:11.5px; font-family:'Courier New',monospace; color:var(--ink-faint);">
+                        {% if r.employee %}{{ r.employee.employee_code }}{% endif %}
+                    </div>
+                </td>
+                <td style="font-family:'Courier New',monospace; font-size:12.5px;
+                           color:var(--maroon); font-weight:600;">
+                    {{ r.book.code if r.book else '—' }}
+                </td>
+                <td style="font-size:13px; max-width:200px;">
+                    {{ r.book.title if r.book else '—' }}
+                </td>
+                <td>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <form method="POST"
+                              action="{{ url_for('admin.approve_return', record_id=r.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Confirm These return? Make sure book is submitted physically')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-primary btn-sm">✓ Confirm Return</button>
+                        </form>
+                        <form method="POST"
+                              action="{{ url_for('admin.reject_return', record_id=r.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Reject this return? The record will go back to Approved.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-danger btn-sm">✕ Reject</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div style="text-align:center; padding:64px 24px; color:var(--ink-faint);">
+    <div style="font-size:40px; margin-bottom:12px;">✓</div>
+    <div style="font-size:15px; font-weight:600; color:var(--ink-light); margin-bottom:6px;">All clear</div>
+    <div style="font-size:13px;">No pending return requests.</div>
+</div>
+{% endif %}
+</div>
+
+{# ── Tab + Date JS ───────────────────────────────────────────────────────── #}
+<script>
+function switchTab(name) {
+    document.getElementById('pane-borrow').style.display = name === 'borrow' ? '' : 'none';
+    document.getElementById('pane-return').style.display = name === 'return' ? '' : 'none';
+    document.getElementById('tab-borrow').classList.toggle('active-tab', name === 'borrow');
+    document.getElementById('tab-return').classList.toggle('active-tab', name === 'return');
+}
+
+function toggleDateEdit(id) {
+    const row = document.getElementById('date-input-row-' + id);
+    row.classList.add('visible');
+    // Focus the date input
+    document.getElementById('date-input-' + id).focus();
+}
+
+function cancelDateEdit(id) {
+    document.getElementById('date-input-row-' + id).classList.remove('visible');
+}
+</script>
+{% endblock %}

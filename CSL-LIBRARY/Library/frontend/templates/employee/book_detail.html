@@ -1,0 +1,463 @@
+{% extends "employee/base.html" %}
+{% block title %}{{ book.title }} | CSL Library{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* ─── Breadcrumb ────────────────────────────────────── */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        color: var(--ink-faint);
+        margin-bottom: 24px;
+    }
+    .breadcrumb a { color: var(--ink-light); text-decoration: none; transition: color 0.15s; }
+    .breadcrumb a:hover { color: var(--maroon); }
+    .breadcrumb-sep { opacity: 0.4; }
+    /* ─── Animation Base ───────────────────────── */
+
+    .animate {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.7s ease;
+    }
+
+    .animate.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Left slide */
+
+    .animate-left {
+        opacity: 0;
+        transform: translateX(-40px);
+        transition: all 0.8s ease;
+    }
+
+    .animate-left.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    /* Right slide */
+
+    .animate-right {
+        opacity: 0;
+        transform: translateX(40px);
+        transition: all 0.8s ease;
+    }
+
+    .animate-right.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    /* ─── Book Layout ───────────────────────────────────── */
+    .book-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 36px;
+        align-items: start;
+    }
+
+    /* ─── Cover Column ──────────────────────────────────── */
+    .book-cover-col { position: sticky; top: 88px; }
+
+    .book-cover-wrap {
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(26,24,20,0.14);
+        aspect-ratio: 2 / 3;
+        background: var(--cream-dark);
+        position: relative;
+    }
+    .book-cover-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .book-cover-placeholder-lg {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(160deg, var(--cream-dark) 0%, #E0DAD0 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        position: relative;
+    }
+    .book-cover-placeholder-lg::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 8px;
+        background: var(--maroon);
+        opacity: 0.2;
+    }
+    .book-cover-placeholder-lg .icon { font-size: 42px; opacity: 0.2; }
+    .book-cover-placeholder-lg .ph-title {
+        font-family: var(--font-display);
+        font-size: 12px;
+        color: var(--ink-light);
+        text-align: center;
+        padding: 0 20px;
+        line-height: 1.4;
+    }
+
+    .avail-block {
+        margin-top: 14px;
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        box-shadow: var(--shadow-soft);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .avail-count {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1;
+    }
+    .avail-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--ink-faint);
+    }
+    .avail-of { font-size: 11px; color: var(--ink-faint); }
+
+    /* ─── Detail Column ─────────────────────────────────── */
+    .book-title-lg {
+        font-family: var(--font-display);
+        font-size: 26px;
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.25;
+        margin-bottom: 6px;
+    }
+    .book-author-lg {
+        font-size: 15px;
+        color: var(--ink-light);
+        margin-bottom: 18px;
+    }
+
+    .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0;
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        margin-bottom: 28px;
+        background: var(--white);
+        box-shadow: var(--shadow-soft);
+    }
+    .meta-item {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--cream-border);
+        border-right: 1px solid var(--cream-border);
+    }
+    .meta-item:nth-child(2n) { border-right: none; }
+    .meta-item:nth-last-child(-n+2) { border-bottom: none; }
+    .meta-key {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--ink-faint);
+        margin-bottom: 3px;
+    }
+    .meta-val {
+        font-size: 13.5px;
+        color: var(--ink);
+        font-weight: 500;
+    }
+    .meta-val.mono {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+    }
+
+    /* ─── Keywords ──────────────────────────────────────── */
+    .keywords-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+    }
+    .keyword-tag {
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--maroon);
+        background: var(--maroon-pale);
+        border: 1px solid rgba(122,29,46,0.12);
+        border-radius: 99px;
+        padding: 3px 10px;
+    }
+
+    /* ─── Remarks ───────────────────────────────────────── */
+    .remarks-block {
+        background: var(--gold-pale);
+        border: 1px solid rgba(200,148,58,0.2);
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        margin-bottom: 28px;
+        font-size: 13.5px;
+        color: var(--ink-light);
+        line-height: 1.55;
+    }
+    .remarks-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--gold);
+        margin-bottom: 5px;
+    }
+
+    /* ─── Request Panel ─────────────────────────────────── */
+    .request-panel {
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .request-panel-header {
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--cream-border);
+        background: var(--cream);
+    }
+    .request-panel-title {
+        font-family: var(--font-display);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+    }
+    .request-panel-body { padding: 22px; }
+
+    .status-block {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: var(--radius-md);
+        font-size: 13.5px;
+        font-weight: 500;
+    }
+    .status-block.pending {
+        background: var(--gold-pale);
+        color: #7A5800;
+        border: 1px solid rgba(200,148,58,0.25);
+    }
+    .status-block.approved {
+        background: var(--green-pale);
+        color: var(--green);
+        border: 1px solid rgba(30,107,69,0.2);
+    }
+    .status-block-icon { font-size: 18px; }
+
+    @media (max-width: 860px) {
+        .book-layout { grid-template-columns: 1fr; gap: 24px; }
+        .book-cover-col { position: static; display: flex; gap: 20px; align-items: flex-start; }
+        .book-cover-wrap { width: 140px; flex-shrink: 0; }
+        .avail-block { width: 140px; }
+    }
+    @media (max-width: 560px) {
+        .book-cover-col { flex-direction: column; }
+        .book-cover-wrap, .avail-block { width: 100%; }
+        .meta-grid { grid-template-columns: 1fr; }
+        .meta-item { border-right: none !important; }
+        .meta-item:last-child { border-bottom: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Breadcrumb ──────────────────────────────────────────────────────────── #}
+<div class="breadcrumb animate">
+    <a href="{{ url_for('employee.dashboard') }}">Browse</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ book.title | truncate(48) }}</span>
+</div>
+
+<div class="book-layout">
+
+    {# ── Cover Column ── #}
+    <div class="book-cover-col">
+        <div class="book-cover-wrap animate-left">
+            {% if book.cover_image %}
+            <img src="/storage/Book-cover/{{ book.cover_image }}"
+                 alt="{{ book.title }}"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="book-cover-placeholder-lg" style="display:none;">
+                <div class="icon">📖</div>
+                <div class="ph-title">{{ book.title }}</div>
+            </div>
+            {% else %}
+            <div class="book-cover-placeholder-lg">
+                <div class="icon">📖</div>
+                <div class="ph-title">{{ book.title }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="avail-block animate">
+            <div>
+                <div class="avail-count" style="color: {% if book.available_copies > 0 %}var(--green){% else %}#B83232{% endif %};">
+                    {{ book.available_copies }}
+                </div>
+                <div class="avail-label">Available</div>
+            </div>
+            {% if book.available_copies > 0 %}
+            <span class="badge badge-green">In Stock</span>
+            {% else %}
+            <span class="badge badge-red">Out</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Detail Column ── #}
+    <div>
+        <div class="book-title-lg animate">{{ book.title }}</div>
+        {% if book.author %}
+        <div class="book-author-lg animate">by {{ book.author }}</div>
+        {% endif %}
+
+        {# Meta grid #}
+        <div class="meta-grid">
+            <div class="meta-item animate">
+                <div class="meta-key">Code</div>
+                <div class="meta-val mono">{{ book.code }}</div>
+            </div>
+            <div class="meta-item animate">
+                <div class="meta-key">Publisher</div>
+                <div class="meta-val">{{ book.publisher or '—' }}</div>
+            </div>
+            <div class="meta-item animate">
+                <div class="meta-key">Edition</div>
+                <div class="meta-val">{{ book.edition or '—' }}</div>
+            </div>
+            <div class="meta-item animate">
+                <div class="meta-key">Year</div>
+                <div class="meta-val">{{ book.publication_year or '—' }}</div>
+            </div>
+            {% if book.shelf_number %}
+            <div class="meta-item animate">
+                <div class="meta-key">Shelf</div>
+                <div class="meta-val">{{ book.shelf_number }}</div>
+            </div>
+            {% endif %}
+            {% if book.price %}
+            <div class="meta-item animate">
+                <div class="meta-key">Price</div>
+                <div class="meta-val">₹{{ book.price }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Keywords #}
+        {% if book.keywords %}
+        <div class="keywords-wrap animate">
+            {% for kw in book.keywords.split(',') %}
+            {% set kw = kw.strip() %}
+            {% if kw %}
+            <span class="keyword-tag animate">{{ kw }}</span>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Remarks #}
+        {% if book.remarks %}
+        <div class="remarks-block animate">
+            <div class="remarks-label">Remarks</div>
+            {{ book.remarks }}
+        </div>
+        {% endif %}
+
+        {# ── Request Panel ── #}
+        <div class="request-panel animate">
+            <div class="request-panel-header">
+                <div class="request-panel-title">Borrow this Book</div>
+            </div>
+            <div class="request-panel-body">
+
+                {% if existing_request %}
+                    {% if existing_request.status == 'PENDING' %}
+                    <div class="status-block pending">
+                        <span class="status-block-icon">⏳</span>
+                        Your request is pending admin approval.
+                    </div>
+                    {% elif existing_request.status == 'APPROVED' %}
+                    <div class="status-block approved">
+                        <span class="status-block-icon">✓</span>
+                        You currently have this book checked out.
+                    </div>
+                    {% endif %}
+
+                {% elif book.available_copies < 1 %}
+                <div class="status-block" style="background:var(--red-pale); color:#B83232; border:1px solid rgba(184,50,50,0.2);">
+                    <span class="status-block-icon">✕</span>
+                    No copies available right now. Check back later.
+                </div>
+
+                {% else %}
+                <form method="POST" action="{{ url_for('employee.request_book', book_code=book.code) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="form-group" style="margin-bottom:18px;">
+                        <label class="form-label" for="expected_at">
+                            Expected Return Date
+                        </label>
+                        <input class="form-input" type="date" id="expected_at" name="expected_at"
+                            min="{{ now.strftime('%Y-%m-%d') }}"
+                            required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+                        Request Book
+                    </button>
+                </form>
+                {% endif %}
+
+            </div>
+        </div>
+
+    </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+
+            if (entry.isIntersecting) {
+                entry.target.classList.add("show");
+            } else {
+                entry.target.classList.remove("show");
+            }
+
+        });
+    }, {
+        threshold: 0.15
+    });
+
+    document.querySelectorAll(
+        ".animate, .animate-left, .animate-right"
+    ).forEach(el => observer.observe(el));
+
+});
+</script>
+{% endblock %}

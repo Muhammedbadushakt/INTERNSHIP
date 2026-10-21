@@ -1,0 +1,263 @@
+{% extends "guest/base.html" %}
+{% block title %}{{ book.title }} | CSL Library{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-light);
+        text-decoration: none;
+        margin-bottom: 24px;
+        transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--maroon); }
+
+    /* ─── Detail layout ──────────────────────────────── */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 36px;
+        align-items: start;
+    }
+
+    /* ─── Cover ──────────────────────────────────────── */
+    .detail-cover-wrap { position: sticky; top: 100px; }
+    .detail-cover {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        object-fit: cover;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--cream-border);
+        box-shadow: var(--shadow-card);
+        display: block;
+    }
+    .detail-cover-ph {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        background: linear-gradient(150deg, var(--cream-dark) 0%, #E8E3D8 100%);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--cream-border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+    .detail-cover-ph::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: var(--maroon); opacity: 0.18; }
+    .detail-cover-ph-icon  { font-size: 44px; opacity: 0.2; }
+    .detail-cover-ph-title { font-family: var(--font-display); font-size: 13px; color: var(--ink-light); text-align: center; padding: 0 16px; line-height: 1.4; }
+
+    .avail-badge-large {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 12px;
+        font-size: 12.5px;
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: var(--radius-sm);
+        width: 100%;
+    }
+    .avail-badge-large.green { background: var(--green-pale); color: var(--green); }
+    .avail-badge-large.red   { background: var(--red-pale);   color: #B83232; }
+
+    /* ─── Right panel ────────────────────────────────── */
+    .detail-code { font-size: 12px; font-family: 'Courier New', monospace; color: var(--ink-faint); letter-spacing: 0.06em; margin-bottom: 6px; }
+    .detail-title { font-family: var(--font-display); font-size: 26px; font-weight: 600; color: var(--ink); line-height: 1.25; margin-bottom: 8px; }
+    .detail-author { font-size: 15px; color: var(--ink-light); margin-bottom: 20px; }
+
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 24px; }
+    .meta-item {}
+    .meta-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 3px; }
+    .meta-value { font-size: 14px; color: var(--ink); }
+
+    /* ─── Keywords ───────────────────────────────────── */
+    .keywords-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 24px; }
+    .keyword-pill { font-size: 11.5px; color: var(--ink-light); background: var(--cream-dark); border: 1px solid var(--cream-border); border-radius: 99px; padding: 3px 10px; }
+
+    /* ─── Remarks ────────────────────────────────────── */
+    .remarks-box {
+        background: var(--gold-pale);
+        border: 1px solid rgba(200,148,58,0.2);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        font-size: 13px;
+        color: #8A6018;
+        margin-bottom: 24px;
+        line-height: 1.5;
+    }
+    .remarks-box strong { display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; color: var(--gold); }
+
+    /* ─── Request Box ────────────────────────────────── */
+    .request-box {
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+    .request-box-header {
+        padding: 14px 18px;
+        background: var(--cream);
+        border-bottom: 1px solid var(--cream-border);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+    }
+    .request-box-body { padding: 18px; }
+
+    .status-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 13.5px;
+        font-weight: 500;
+    }
+    .status-banner.pending  { background: var(--gold-pale);   color: #8A6018; border: 1px solid rgba(200,148,58,0.2); }
+    .status-banner.approved { background: var(--green-pale);  color: var(--green); border: 1px solid rgba(30,107,69,0.15); }
+
+    @media (max-width: 768px) {
+        .detail-grid { grid-template-columns: 1fr; }
+        .detail-cover-wrap { position: static; max-width: 200px; }
+        .meta-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('guest.dashboard') }}" class="back-link">← Back to catalogue</a>
+
+<div class="detail-grid">
+
+    {# ── Left: Cover ──────────────────────────────────── #}
+    <div class="detail-cover-wrap">
+        {% if book.cover_image %}
+        <img src="/storage/Book-cover/{{ book.cover_image }}" alt="{{ book.title }}" class="detail-cover"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="detail-cover-ph" style="display:none;">
+            <div class="detail-cover-ph-icon">📖</div>
+            <div class="detail-cover-ph-title">{{ book.title }}</div>
+        </div>
+        {% else %}
+        <div class="detail-cover-ph">
+            <div class="detail-cover-ph-icon">📖</div>
+            <div class="detail-cover-ph-title">{{ book.title }}</div>
+        </div>
+        {% endif %}
+
+        <div class="avail-badge-large {% if book.available_copies > 0 %}green{% else %}red{% endif %}">
+            {% if book.available_copies > 0 %}
+                ✓ {{ book.available_copies }} cop{{ 'y' if book.available_copies == 1 else 'ies' }} available
+            {% else %}
+                ✗ Not available
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Right: Info + Request ───────────────────────── #}
+    <div>
+
+        <div class="detail-code">{{ book.code }}</div>
+        <div class="detail-title">{{ book.title }}</div>
+        {% if book.author %}
+        <div class="detail-author">by {{ book.author }}</div>
+        {% endif %}
+
+        {# Subject badge #}
+        {% if book.subject %}
+        <div style="margin-bottom: 18px;">
+            <span class="badge badge-maroon">{{ book.subject.name }}</span>
+        </div>
+        {% endif %}
+
+        <div class="meta-grid">
+            {% if book.publisher %}
+            <div class="meta-item">
+                <div class="meta-label">Publisher</div>
+                <div class="meta-value">{{ book.publisher }}</div>
+            </div>
+            {% endif %}
+            {% if book.edition %}
+            <div class="meta-item">
+                <div class="meta-label">Edition</div>
+                <div class="meta-value">{{ book.edition }}</div>
+            </div>
+            {% endif %}
+            {% if book.publication_year %}
+            <div class="meta-item">
+                <div class="meta-label">Year</div>
+                <div class="meta-value">{{ book.publication_year }}</div>
+            </div>
+            {% endif %}
+            {% if book.shelf_number %}
+            <div class="meta-item">
+                <div class="meta-label">Shelf</div>
+                <div class="meta-value">{{ book.shelf_number }}</div>
+            </div>
+            {% endif %}
+            {% if book.price %}
+            <div class="meta-item">
+                <div class="meta-label">Price</div>
+                <div class="meta-value">₹{{ book.price }}</div>
+            </div>
+            {% endif %}
+            <div class="meta-item">
+                <div class="meta-label">Total Copies</div>
+                <div class="meta-value">{{ book.copies }}</div>
+            </div>
+        </div>
+
+        {% if book.keywords %}
+        <div style="margin-bottom: 8px;">
+            <div class="meta-label" style="margin-bottom: 8px;">Keywords</div>
+            <div class="keywords-wrap">
+                {% for kw in book.keywords.split(',') %}
+                <span class="keyword-pill">{{ kw.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if book.remarks %}
+        <div class="remarks-box">
+            <strong>Remarks</strong>
+            {{ book.remarks }}
+        </div>
+        {% endif %}
+
+        {# ── Request Section ──────────────────────── #}
+        <div class="request-box">
+            <div class="request-box-header">📋 Request this Book</div>
+            <div class="request-box-body">
+
+                {% if existing_request %}
+                    <div class="status-banner pending">
+                        ⏳ &nbsp; Please ask Your Sponsered Employee to Request</strong>.
+                    </div>
+                {% elif book.available_copies < 1 %}
+                    <div class="status-banner" style="background: var(--red-pale); color: #B83232; border: 1px solid rgba(184,50,50,0.15);">
+                        ✗ &nbsp; No copies available at the moment.
+                    </div>
+
+                {% else %}
+                    <div class="status-banner" style="background: var(--red-pale); color: #B83232; border: 1px solid rgba(184,50,50,0.15);">
+                        Please Ask Your Sponsered Employee to Request these Specific Book to You 
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

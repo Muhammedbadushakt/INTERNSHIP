@@ -1,0 +1,136 @@
+{% extends "admin/base.html" %}
+{% block title %}Export Employees | Admin{% endblock %}
+{% block nav_export_emp %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">People</div>
+    <h1 class="page-title">Export Employees</h1>
+    <p class="page-subtitle">Download employee and guest records as an Excel file.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div>
+            <div class="card-title">Choose Export</div>
+            <div style="font-size:12.5px; color:var(--ink-faint); margin-top:3px;">
+                The selected report will be generated in .xlsx format.
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.export_employees') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="card-body">
+            <div class="form-grid form-grid-2">
+                <label style="display:block; cursor:pointer;">
+                    <input type="radio" name="export_type" value="all" checked style="position:absolute; opacity:0; pointer-events:none;">
+                    <div class="export-option">
+                        <div>
+                            <div class="export-title">All Employees</div>
+                            <div class="export-meta">Complete employee list with status and joining date.</div>
+                        </div>
+                        <span class="badge badge-grey">Default</span>
+                    </div>
+                </label>
+
+                <label style="display:block; cursor:pointer;">
+                    <input type="radio" name="export_type" value="active" style="position:absolute; opacity:0; pointer-events:none;">
+                    <div class="export-option">
+                        <div>
+                            <div class="export-title">Active Employees</div>
+                            <div class="export-meta">Only accounts currently marked active.</div>
+                        </div>
+                        <span class="badge badge-green">Active</span>
+                    </div>
+                </label>
+
+                <label style="display:block; cursor:pointer;">
+                    <input type="radio" name="export_type" value="inactive" style="position:absolute; opacity:0; pointer-events:none;">
+                    <div class="export-option">
+                        <div>
+                            <div class="export-title">Inactive Employees</div>
+                            <div class="export-meta">Pending or inactive employee accounts.</div>
+                        </div>
+                        <span class="badge badge-gold">Inactive</span>
+                    </div>
+                </label>
+
+                <label style="display:block; cursor:pointer;">
+                    <input type="radio" name="export_type" value="overdue" style="position:absolute; opacity:0; pointer-events:none;">
+                    <div class="export-option">
+                        <div>
+                            <div class="export-title">Overdue Employees</div>
+                            <div class="export-meta">Employees with at least one overdue approved book record.</div>
+                        </div>
+                        <span class="badge badge-red">Overdue</span>
+                    </div>
+                </label>
+
+                <label style="display:block; cursor:pointer;">
+                    <input type="radio" name="export_type" value="guests" style="position:absolute; opacity:0; pointer-events:none;">
+                    <div class="export-option">
+                        <div>
+                            <div class="export-title">Guest Users</div>
+                            <div class="export-meta">Guest details with sponsor code and registration date.</div>
+                        </div>
+                        <span class="badge badge-maroon">Guests</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div class="card-footer" style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+            <a href="{{ url_for('admin.employees') }}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">&#8595; Download Excel</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .export-option {
+        min-height: 92px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px;
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-md);
+         background: var(--cream);
+        transition: all 0.15s;
+    }
+
+    label:hover .export-option {
+        border-color: #B8B0A0;
+        background: var(--white);
+    }
+
+    input[type="radio"]:checked + .export-option {
+        border-color: var(--maroon);
+        background: var(--maroon-pale);
+        box-shadow: 0 0 0 3px rgba(122,29,46,0.08);
+    }
+
+    .export-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 5px;
+    }
+
+    .export-meta {
+        font-size: 12.5px;
+        line-height: 1.45;
+        color: var(--ink-light);
+    }
+
+    @media (max-width: 600px) {
+        .export-option {
+            min-height: auto;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends "admin/base.html" %}
+{% block title %}Manage Employee | Admin{% endblock %}
+{% block nav_manage_employee %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .role-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .role-tab-input { display: none; }
+
+    .role-tab-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px 12px;
+        border: 1.5px solid var(--cream-border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        background: var(--cream);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-light);
+        transition: all 0.13s;
+    }
+
+    .role-tab-label:hover { border-color: #B0A898; background: var(--cream-dark); }
+
+    .role-tab-input:checked + .role-tab-label {
+        border-color: var(--maroon);
+        background: var(--maroon-pale);
+        color: var(--maroon);
+    }
+
+    .danger-zone {
+        border: 1px solid #FCA5A5;
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+        background: #FFF5F5;
+        margin-top: 20px;
+    }
+
+    .danger-zone-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #B91C1C;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">People</div>
+    <h1 class="page-title">Manage Employee</h1>
+    <p class="page-subtitle">Add a new employee, or search an existing one to edit or remove.</p>
+</div>
+
+<!-- Alerts -->
+{% if error %}<div class="alert alert-error"><span class="alert-icon">⚠</span><div>{{ error }}</div></div>{% endif %}
+{% if success %}<div class="alert alert-success"><span class="alert-icon">✓</span><div>{{ success }}</div></div>{% endif %}
+{% if search_error %}<div class="alert alert-warning"><span class="alert-icon">⚡</span><div>{{ search_error }}</div></div>{% endif %}
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+
+    <!-- ── Add Employee ── -->
+    <div class="card">
+        <div class="card-header"><span class="card-title">Add New Employee</span></div>
+        <form method="POST" action="{{ url_for('admin.manage_employee') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token}}">
+            <input type="hidden" name="action" value="add">
+            <div class="card-body">
+                <div class="form-grid form-grid-2" style="margin-bottom:16px;">
+                    <div class="form-group">
+                        <label class="form-label">Employee Code</label>
+                        <input class="form-input" type="text" name="employee_code"
+                               placeholder="e.g. BD-001"
+                               style="text-transform:uppercase;" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input class="form-input" type="text" name="name" placeholder="Full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input class="form-input" type="password" name="password" placeholder="Set password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Department <span class="opt">(optional)</span></label>
+                        <input class="form-input" type="text" name="department" placeholder="e.g. Design">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Designation <span class="opt">(optional)</span></label>
+                        <input class="form-input" type="text" name="designation" placeholder="e.g. Engineer">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact <span class="opt">(optional)</span></label>
+                        <input class="form-input" type="text" name="contact_number" placeholder="Phone number">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Gmail <span class="opt">(optional)</span></label>
+                        <input class="form-input" type="email" name="gmail_id" placeholder="name@gmail.com">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label">Role</label>
+                    <div class="role-tabs">
+                        <input type="radio" name="role" id="add-role-emp"   value="employee" class="role-tab-input" checked>
+                        <label for="add-role-emp"   class="role-tab-label">📖 &nbsp;Employee</label>
+                        <input type="radio" name="role" id="add-role-admin" value="admin"    class="role-tab-input">
+                        <label for="add-role-admin" class="role-tab-label">⚙ &nbsp;Admin</label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer" style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Add Employee</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── Edit / Delete ── -->
+    <div>
+        <!-- Search -->
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">Find Employee</span></div>
+            <form method="GET" action="{{ url_for('admin.manage_employee') }}">
+                <div class="card-body" style="padding:16px 20px;">
+                    <div style="display:flex; gap:10px;">
+                        <div class="search-input-wrap" style="flex:1;">
+                            <span class="search-icon">⌕</span>
+                            <input class="form-input" type="text" name="code"
+                                   value="{{ request.args.get('code','') }}"
+                                   placeholder="Employee code…">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Find</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {% if employee %}
+        <!-- Edit form -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">
+                    <span style="font-family:'Courier New',monospace; font-size:13px; color:var(--maroon);">{{ employee.employee_code }}</span>
+                    &nbsp;—&nbsp;{{ employee.name }}
+                </span>
+                <span class="badge {% if employee.status == 'ACTIVE' %}badge-green{% else %}badge-red{% endif %}">
+                    {{ employee.status }}
+                </span>
+            </div>
+            <form method="POST" action="{{ url_for('admin.manage_employee') }}">
+                <input type="hidden" name="action"        value="edit">
+                <input type="hidden" name="employee_code" value="{{ employee.employee_code }}">
+                <div class="card-body">
+                    <div class="alert alert-info" style="margin-bottom:14px;">
+                        <span class="alert-icon">ℹ</span>
+                        <span style="font-size:13px;">Leave blank to keep the current value.</span>
+                    </div>
+                    <div class="form-grid form-grid-2" style="margin-bottom:14px;">
+                        <div class="form-group">
+                            <label class="form-label">Name <span class="opt">({{ employee.name }})</span></label>
+                            <input class="form-input" type="text" name="name" placeholder="Leave blank to keep">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Department <span class="opt">({{ employee.department or 'none' }})</span></label>
+                            <input class="form-input" type="text" name="department" placeholder="Leave blank to keep">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Designation <span class="opt">({{ employee.designation or 'none' }})</span></label>
+                            <input class="form-input" type="text" name="designation" placeholder="Leave blank to keep">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contact <span class="opt">({{ employee.contact_number or 'none' }})</span></label>
+                            <input class="form-input" type="text" name="contact_number" placeholder="Leave blank to keep">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">Gmail <span class="opt">({{ employee.gmail_id or 'none' }})</span></label>
+                            <input class="form-input" type="email" name="gmail_id" placeholder="Leave blank to keep">
+                        </div>
+                    </div>
+
+                    <div class="form-grid form-grid-2" style="margin-bottom:14px;">
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <div class="select-wrap">
+                                <select class="form-select" name="status">
+                                    <option value="">Keep current</option>
+                                    <option value="ACTIVE"   {% if employee.status=='ACTIVE'   %}selected{% endif %}>Active</option>
+                                    <option value="INACTIVE" {% if employee.status=='INACTIVE' %}selected{% endif %}>Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Role</label>
+                            <div class="select-wrap">
+                                <select class="form-select" name="role">
+                                    <option value="">Keep current</option>
+                                    <option value="employee">Employee</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer" style="display:flex; justify-content:flex-end;">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+
+            <!-- Delete -->
+            <div class="danger-zone" style="margin:0 20px 20px;">
+                <div class="danger-zone-title">⚠ Danger Zone</div>
+                <p style="font-size:12.5px; color:#7F1D1D; margin-bottom:12px;">
+                    Deleting removes the account and all associated roles. Borrow records may be affected.
+                </p>
+                <form method="POST" action="{{ url_for('admin.manage_employee') }}"
+                      onsubmit="return confirm('Delete {{ employee.employee_code }}? This cannot be undone.');">
+                    <input type="hidden" name="action"        value="delete">
+                    <input type="hidden" name="employee_code" value="{{ employee.employee_code }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete Employee</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

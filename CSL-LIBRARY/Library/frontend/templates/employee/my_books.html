@@ -1,0 +1,441 @@
+{% extends "employee/base.html" %}
+{% block title %}My Books | CSL Library{% endblock %}
+{% block nav_my_books %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* ─── Section Headers & Layout ───────────────────────────────── */
+    .main-section-header {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .main-section-wrapper {
+        margin-bottom: 32px;
+    }
+
+    /* ─── Sub-section Titles (Inside Cards) ──────────────────────── */
+    .subsection-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--ink-faint);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 12px 20px 6px;
+        background: var(--cream);
+        border-bottom: 1px solid var(--cream-border);
+        margin-top: 1px;
+    }
+    .subsection-title:first-child {
+        margin-top: 0;
+        padding-top: 16px; /* Align with card top padding */
+    }
+    .subsection-title + .book-row {
+        border-top: none; /* Ensure clean lines */
+    }
+
+    /* ─── Book Row ──────────────────────────────────────── */
+    .book-row {
+        display: grid;
+        grid-template-columns: 52px 1fr auto;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--cream-dark);
+        transition: background 0.1s;
+    }
+    .book-row:last-child { border-bottom: none; }
+    .book-row:hover { background: #FAFAF7; }
+
+    .book-thumb {
+        width: 52px;
+        height: 70px;
+        border-radius: 4px;
+        object-fit: cover;
+        background: var(--cream-dark);
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+    }
+    .book-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .book-thumb-ph {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(160deg, var(--cream-dark) 0%, #E0DAD0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        opacity: 0.5;
+        position: relative;
+    }
+    .book-thumb-ph::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: var(--maroon);
+        opacity: 0.3;
+    }
+
+    .book-info { min-width: 0; }
+    .book-row-title {
+        font-family: var(--font-display);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 3px;
+    }
+    .book-row-title a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.15s;
+    }
+    .book-row-title a:hover { color: var(--maroon); }
+    .book-row-meta {
+        font-size: 12px;
+        color: var(--ink-faint);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .book-row-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .book-row-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    /* ─── Due Warning ───────────────────────────────────── */
+    .due-chip {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 99px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .due-chip.overdue {
+        background: #FEF2F2;
+        color: #B91C1C;
+    }
+    .due-chip.soon {
+        background: var(--gold-pale);
+        color: #7A5A1A;
+    }
+    .due-chip.ok {
+        background: var(--green-pale);
+        color: var(--green);
+    }
+
+    /* ─── Alert Banner ──────────────────────────────────── */
+    .alert-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 18px;
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    .alert-banner.warning {
+        background: var(--gold-pale);
+        border: 1px solid rgba(200,148,58,0.25);
+        color: #7A5A1A;
+    }
+    .alert-banner.danger {
+        background: #FEF2F2;
+        border: 1px solid rgba(185,28,28,0.2);
+        color: #B91C1C;
+    }
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── History muted ─────────────────────────────────── */
+    .history-row { opacity: 0.72; }
+    .history-row:hover { opacity: 1; }
+
+    /* ─── Empty State Adjustment ─────────────────────────── */
+    .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+        color: var(--ink-light);
+    }
+    .empty-state-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.6; }
+    .empty-state-title { font-weight: 600; margin-bottom: 4px; color: var(--ink); }
+    .empty-state-text { font-size: 13px; }
+
+    @media (max-width: 600px) {
+        .book-row { grid-template-columns: 44px 1fr; }
+        .book-row-actions { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Page Header ── #}
+<div class="page-header">
+    <div class="page-eyebrow">Library</div>
+    <h1 class="page-title">My Books</h1>
+    <p class="page-subtitle">Overview of your current and past library interactions.</p>
+</div>
+
+{# ── Summary Stats ── #}
+<div class="stat-row" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+    <div class="stat-chip" style="background: var(--white); border: 1px solid var(--cream-border); padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+        <div class="stat-chip-value" style="font-weight: 700; font-size: 18px; color: var(--green);">{{ approved|length + due|length }}</div>
+        <div class="stat-chip-label" style="font-size: 11px; text-transform: uppercase; color: var(--ink-faint); letter-spacing: 0.05em;">Active</div>
+    </div>
+    <div class="stat-chip" style="background: var(--white); border: 1px solid var(--cream-border); padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+        <div class="stat-chip-value" style="font-weight: 700; font-size: 18px; color: var(--gold);">{{ pending|length }}</div>
+        <div class="stat-chip-label" style="font-size: 11px; text-transform: uppercase; color: var(--ink-faint); letter-spacing: 0.05em;">Pending</div>
+    </div>
+    <div class="stat-chip" style="background: var(--white); border: 1px solid var(--cream-border); padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+        <div class="stat-chip-value" style="font-weight: 700; font-size: 18px; color: var(--ink-light);">{{ history|length }}</div>
+        <div class="stat-chip-label" style="font-size: 11px; text-transform: uppercase; color: var(--ink-faint); letter-spacing: 0.05em;">Returned</div>
+    </div>
+</div>
+
+{# ── Alerts ── #}
+{% if due %}
+<div class="alert-banner danger">
+    <span class="alert-icon">⚠</span>
+    <div>
+        <strong>{{ due|length }} book{{ 's' if due|length > 1 }} overdue.</strong>
+        Please return {{ 'them' if due|length > 1 else 'it' }} at the earliest to avoid penalties.
+    </div>
+</div>
+{% endif %}
+
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 1: ISSUED
+   (Active Loans, Pending Requests, Return Requests)
+══════════════════════════════════════════════════════════════════ #}
+<div class="main-section-wrapper">
+    <div class="main-section-header">
+        <span>📤</span> Issued & Active Requests
+    </div>
+    
+    <div class="card">
+        
+        {# Sub-section: Active Loans #}
+        {% set active_all = due + approved %}
+        {% if active_all %}
+            <div class="subsection-title">Borrowed Books</div>
+            {% for record in active_all %}
+            {% set days_left = ((record.expected_at - now).days) if record.expected_at else None %}
+            <div class="book-row">
+                <div class="book-thumb">
+                    <div class="book-thumb-ph">📖</div>
+                </div>
+                <div class="book-info">
+                    <div class="book-row-title">
+                        <a href="{{ url_for('employee.book_detail', book_code=record.book_id) }}">
+                            {{ record.book_id }}
+                        </a>
+                    </div>
+                    <div class="book-row-meta">
+                        <span>Code: <strong>{{ record.book_id }}</strong></span>
+                        {% if record.issued_at %}
+                        <span>Issued {{ record.issued_at.strftime('%d %b %Y') }}</span>
+                        {% endif %}
+                        {% if record.expected_at %}
+                        <span>Due {{ record.expected_at.strftime('%d %b %Y') }}</span>
+                        {% endif %}
+                    </div>
+                    <div style="margin-top:6px;">
+                        {% if days_left is not none %}
+                            {% if days_left < 0 %}
+                            <span class="due-chip overdue">⚠ {{ days_left|abs }} day{{ 's' if days_left|abs != 1 }} overdue</span>
+                            {% elif days_left <= 3 %}
+                            <span class="due-chip soon">⏰ Due in {{ days_left }} day{{ 's' if days_left != 1 }}</span>
+                            {% else %}
+                            <span class="due-chip ok">✓ {{ days_left }} days left</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="due-chip ok">No return date set</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="book-row-actions">
+                    <span class="badge badge-green">Issued</span>
+                    <a href="{{ url_for('employee.return_book', record_id=record.id) }}" class="btn btn-ghost btn-sm">Return</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {# Sub-section: Pending Requests #}
+        {% if pending %}
+            <div class="subsection-title">Pending Requests</div>
+            {% for record in pending %}
+            <div class="book-row">
+                <div class="book-thumb">
+                    <div class="book-thumb-ph">
+                        <!-- Used generic placeholder here as per original structure logic -->
+                        <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; opacity:0.3;">📖</div>
+                    </div>
+                </div>
+                <div class="book-info">
+                    <div class="book-row-title">
+                        <a href="{{ url_for('employee.book_detail', book_code=record.book_id) }}">
+                            {{ record.book_id }}
+                        </a>
+                    </div>
+                    <div class="book-row-meta">
+                        <span>Code: <strong>{{ record.book_id }}</strong></span>
+                        {% if record.issued_at %}
+                        <span>Requested {{ record.issued_at.strftime('%d %b %Y') }}</span>
+                        {% endif %}
+                        {% if record.expected_at %}
+                        <span>Expected by {{ record.expected_at.strftime('%d %b %Y') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="book-row-actions">
+                    <span class="badge badge-gold">Pending</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {# Sub-section: Return Requested #}
+        {% if return_requested %}
+            <div class="subsection-title">Return Requests (Pending Approval)</div>
+            {% for record in return_requested %}
+            <div class="book-row">
+                <div class="book-thumb">
+                    <div class="book-thumb-ph">📖</div>
+                </div>
+                <div class="book-info">
+                    <div class="book-row-title">
+                        <a href="{{ url_for('employee.book_detail', book_code=record.book_id) }}">
+                            {{ record.book_id }}
+                        </a>
+                    </div>
+                    <div class="book-row-meta">
+                        {% if record.returned_at %}
+                        <span>Submitted {{ record.returned_at.strftime('%d %b %Y') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="book-row-actions">
+                    <span class="badge badge-maroon">Waiting for Admin</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {# Empty State for 'Issued' if everything is empty #}
+        {% if not (active_all or pending or return_requested) %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📤</div>
+                <div class="empty-state-title">No active books</div>
+                <div class="empty-state-text">You don't have any books currently issued or pending.</div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 2: RETURNED
+   (History, Rejected)
+══════════════════════════════════════════════════════════════════ #}
+<div class="main-section-wrapper">
+    <div class="main-section-header">
+        <span>↩</span> Returned & History
+    </div>
+    
+    <div class="card">
+
+        {# Sub-section: History #}
+        {% if history %}
+            <div class="subsection-title">Borrowing History</div>
+            {% for record in history %}
+            <div class="book-row history-row">
+                <div class="book-thumb">
+                    <div class="book-thumb-ph">📖</div>
+                </div>
+                <div class="book-info">
+                    <div class="book-row-title">
+                        <a href="{{ url_for('employee.book_detail', book_code=record.book_id) }}">
+                            {{ record.book_id }}
+                        </a>
+                    </div>
+                    <div class="book-row-meta">
+                        {% if record.issued_at %}
+                        <span>Borrowed {{ record.issued_at.strftime('%d %b %Y') }}</span>
+                        {% endif %}
+                        {% if record.returned_at %}
+                        <span>Returned {{ record.returned_at.strftime('%d %b %Y') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="book-row-actions">
+                    <span class="badge badge-grey">Returned</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {# Sub-section: Rejected #}
+        {% if rejected %}
+            <div class="subsection-title">Rejected Requests</div>
+            {% for record in rejected %}
+            <div class="book-row">
+                <div class="book-thumb">
+                    <div class="book-thumb-ph">📖</div>
+                </div>
+                <div class="book-info">
+                    <div class="book-row-title">
+                        <a href="{{ url_for('employee.book_detail', book_code=record.book_id) }}">
+                            {{ record.book_id }}
+                        </a>
+                    </div>
+                    <div class="book-row-meta">
+                        {% if record.issued_at %}
+                        <span>Requested {{ record.issued_at.strftime('%d %b %Y') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="book-row-actions">
+                    <span class="badge badge-red">Rejected</span>
+                    <a href="{{ url_for('employee.book_detail', book_code=record.book_id) }}" class="btn btn-ghost btn-sm">Request Again</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {# Empty State for 'Returned' if everything is empty #}
+        {% if not (history or rejected) %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🕐</div>
+                <div class="empty-state-title">No history yet</div>
+                <div class="empty-state-text">Your returned and rejected books will appear here.</div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,428 @@
+{% extends "admin/base.html" %}
+{% block title %}Edit Book | Admin{% endblock %}
+{% block nav_edit_book %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .book-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .meta-key  { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em;
+                 text-transform: uppercase; color: var(--ink-faint); }
+    .meta-val  { font-size: 13.5px; color: var(--ink); font-weight: 500; }
+
+    .danger-zone {
+        border: 1px solid #FCA5A5;
+        border-radius: var(--radius-md);
+        padding: 20px 24px;
+        background: #FFF5F5;
+        margin-top: 24px;
+    }
+    .danger-zone-title {
+        font-size: 13px; font-weight: 700; color: #B91C1C;
+        letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .danger-zone p { font-size: 13px; color: #7F1D1D; margin-bottom: 14px; }
+
+    /* Propagation banner */
+    .propagation-banner {
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        font-size: 12.5px;
+        color: #1E40AF;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    .propagation-banner strong { font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">Books</div>
+    <h1 class="page-title">Edit / Delete Book</h1>
+    <p class="page-subtitle">Search by exact copy code, then update fields or remove the entry.</p>
+</div>
+
+<!-- Alerts -->
+{% if error %}
+<div class="alert alert-error"><span class="alert-icon">⚠</span><div>{{ error }}</div></div>
+{% endif %}
+{% if success %}
+<div class="alert alert-success"><span class="alert-icon">✓</span><div>{{ success }}</div></div>
+{% endif %}
+{% if search_error %}
+<div class="alert alert-warning"><span class="alert-icon">⚡</span><div>{{ search_error }}</div></div>
+{% endif %}
+
+<!-- Code search -->
+<form method="GET" action="{{ url_for('admin.edit_book') }}" style="margin-bottom:24px;">
+    <div class="card">
+        <div class="card-body" style="padding:16px 20px;">
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                <div class="form-group" style="flex:1; min-width:200px; margin:0;">
+                    <label class="form-label">Book Code</label>
+                    <div class="search-input-wrap">
+                        <span class="search-icon">⌕</span>
+                        <input class="form-input" type="text" name="code"
+                               value="{{ request.args.get('code','') }}"
+                               placeholder="e.g. TXT-NAV-001-c.1">
+                    </div>
+                    <span class="form-hint">Enter the full copy code including <code>-c.N</code> suffix.</span>
+                </div>
+                <button type="submit" class="btn btn-primary">Find Book</button>
+                {% if book %}
+                <a href="{{ url_for('admin.edit_book') }}" class="btn btn-ghost">Clear</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</form>
+
+{% if book %}
+
+{# ── Derive sibling info for UI hints ──────────────────────────── #}
+{% set base_code = book.code | replace('-c.' ~ book.code.split('c.')[-1], '') %}
+
+<!-- Current book info -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <span class="card-title">
+            <span style="font-family:'Courier New',monospace; font-size:14px; color:var(--maroon);">
+                {{ book.code }}
+            </span>
+            &nbsp;—&nbsp;{{ book.title }}
+        </span>
+        <span class="badge {% if available_count > 0 %}badge-green{% else %}badge-red{% endif %}">
+            {% if available_count > 0 %}Available{% else %}Checked out{% endif %}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="book-meta-grid">
+            <div class="meta-item"><span class="meta-key">Author</span>
+                <span class="meta-val">{{ book.author or '—' }}</span></div>
+            <div class="meta-item"><span class="meta-key">Publisher</span>
+                <span class="meta-val">{{ book.publisher or '—' }}</span></div>
+            <div class="meta-item"><span class="meta-key">Edition</span>
+                <span class="meta-val">{{ book.edition or '—' }}</span></div>
+            <div class="meta-item"><span class="meta-key">Year</span>
+                <span class="meta-val">{{ book.publication_year or '—' }}</span></div>
+            <div class="meta-item"><span class="meta-key">Subject</span>
+                <span class="meta-val">{{ book.subject.name if book.subject else '—' }}</span></div>
+            <div class="meta-item"><span class="meta-key">Shelf</span>
+                <span class="meta-val">{{ book.shelf_number or '—' }}</span></div>
+            <div class="meta-item"><span class="meta-key">Price</span>
+                <span class="meta-val">{% if book.price %}₹{{ book.price }}{% else %}—{% endif %}</span></div>
+            <div class="meta-item"><span class="meta-key">Copies (this title)</span>
+                <span class="meta-val">{{ book.copies }} total · {{ available_count }} available</span></div>
+        </div>
+        {% if book.keywords %}
+        <div style="font-size:12px; color:var(--ink-faint);">Keywords: {{ book.keywords }}</div>
+        {% endif %}
+        {% if book.remarks %}
+        <div style="font-size:12px; color:var(--ink-faint); margin-top:4px;">Remarks: {{ book.remarks }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ══ Edit form ══════════════════════════════════════════════════ -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><span class="card-title">Update Details</span></div>
+    <form method="POST" action="{{ url_for('admin.edit_book') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action"     value="edit">
+        <input type="hidden" name="book_code"  value="{{ book.code }}">
+        <div class="card-body">
+
+            <!-- Propagation notice -->
+            <div class="propagation-banner">
+                <span>📋</span>
+                <span>
+                    <strong>Shared fields propagate to all copies.</strong>
+                    Saving here will update <strong>Title, Author, Publisher, Edition, Year,
+                    Subject, Shelf, Keywords, Price</strong> and <strong>Remarks</strong>
+                    on every physical copy of this title ({{ base_code }}-c.1 … c.{{ book.copies }}).
+                    Cover image is updated for <em>this copy only</em>.
+                </span>
+            </div>
+
+            <div class="alert alert-info" style="margin-bottom:16px;">
+                <span class="alert-icon">ℹ</span>
+                <span style="font-size:13px;">Leave a field blank to keep the current value.</span>
+            </div>
+
+            <div class="form-grid form-grid-2">
+
+                <!-- Title -->
+                <div class="form-group full-width">
+                    <label class="form-label">Title <span style="color:#B91C1C;">*</span></label>
+                    <input class="form-input" type="text" name="title" required
+                           value="{{ book.title }}" placeholder="{{ book.title }}">
+                </div>
+
+                <!-- Author -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Author
+                        <span class="opt">(current: {{ book.author or 'none' }})</span>
+                    </label>
+                    <input class="form-input" type="text" name="author"
+                           placeholder="Leave blank to keep">
+                </div>
+
+                <!-- Publisher -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Publisher
+                        <span class="opt">(current: {{ book.publisher or 'none' }})</span>
+                    </label>
+                    <input class="form-input" type="text" name="publisher"
+                           placeholder="Leave blank to keep">
+                </div>
+
+                <!-- Edition -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Edition
+                        <span class="opt">(current: {{ book.edition or 'none' }})</span>
+                    </label>
+                    <input class="form-input" type="text" name="edition"
+                           placeholder="Leave blank to keep">
+                </div>
+
+                <!-- Publication Year -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Publication Year
+                        <span class="opt">(current: {{ book.publication_year or 'none' }})</span>
+                    </label>
+                    <input class="form-input" type="number" name="publication_year"
+                           placeholder="Leave blank to keep">
+                </div>
+
+                <!-- Subject -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Subject Name
+                        <span class="opt">(current: {{ book.subject.name if book.subject else 'none' }})</span>
+                    </label>
+                    <input class="form-input" type="text" name="subject_name"
+                           placeholder="Leave blank to keep"
+                           style="text-transform:uppercase;">
+                </div>
+
+                <!-- Shelf — dropdown from DB ──────────────── -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Shelf Number
+                        <span class="opt">(current: {{ book.shelf_number or 'none' }})</span>
+                    </label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="shelf_number">
+                            <option value="">— Keep current ({{ book.shelf_number or 'none' }}) —</option>
+                            {% for shelf in shelves %}
+                            <option value="{{ shelf.name }}"
+                                {% if shelf.name == book.shelf_number %}selected{% endif %}>
+                                {{ shelf.name }}{% if shelf.description %} — {{ shelf.description }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if not shelves %}
+                    <span class="form-hint" style="color:#B45309;">
+                        No shelves defined yet —
+                        <a href="{{ url_for('admin.book_codes') }}" style="color:var(--maroon);">
+                            add one in Code Maker
+                        </a>.
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Price -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Price
+                        <span class="opt">(current: {% if book.price %}₹{{ book.price }}{% else %}none{% endif %})</span>
+                    </label>
+                    <input class="form-input" type="number" name="price"
+                           placeholder="Leave blank to keep">
+                </div>
+
+                <!-- Keywords -->
+                <div class="form-group full-width">
+                    <label class="form-label">
+                        Keywords
+                        <span class="opt">(current: {{ book.keywords or 'none' }})</span>
+                    </label>
+                    <input class="form-input" type="text" name="keywords"
+                           placeholder="Leave blank to keep">
+                </div>
+
+                <!-- Remarks -->
+                <div class="form-group full-width">
+                    <label class="form-label">
+                        Remarks
+                        <span class="opt">(current: {{ book.remarks or 'none' }})</span>
+                    </label>
+                    <textarea class="form-textarea" name="remarks" rows="2"
+                              placeholder="Leave blank to keep"></textarea>
+                </div>
+
+                <!-- Cover image (this copy only) -->
+                <div class="form-group full-width">
+                    <label class="form-label">
+                        Cover Image
+                        <span class="opt"> — updates this copy only</span>
+                    </label>
+                    {% if book.cover_image and book.cover_image != 'DEFAULTCOVER.png' %}
+                    <div style="margin-bottom:10px; display:flex; align-items:center; gap:12px;">
+                        <img src="{{ url_for('static', filename='Book-cover/' ~ book.cover_image) }}"
+                             alt="Current cover"
+                             style="height:80px; width:60px; object-fit:cover;
+                                    border-radius:4px; border:1px solid var(--cream-border);">
+                        <span style="font-size:12px; color:var(--ink-faint);">Current cover</span>
+                    </div>
+                    {% else %}
+                    <div style="margin-bottom:10px;">
+                        <span style="font-size:12px; color:var(--ink-faint);">
+                            No custom cover (using default)
+                        </span>
+                    </div>
+                    {% endif %}
+                    <input class="form-input" type="file" name="cover_image"
+                           accept="image/png,image/jpeg,image/webp,image/jpg"
+                           style="height:auto; padding:6px 12px;">
+                    <span class="form-hint">PNG, JPG or WEBP. Replaces the cover for this copy only.</span>
+                </div>
+
+            </div>
+        </div>
+        <div class="card-footer" style="display:flex; justify-content:flex-end; gap:10px;">
+            <a href="{{ url_for('admin.edit_book') }}?code={{ book.code }}"
+               class="btn btn-ghost">Reset</a>
+            <button type="submit" class="btn btn-primary">Save Changes (all copies)</button>
+        </div>
+    </form>
+</div>
+
+<!-- ══ Availability (across all copies of this title) ════════════ -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <span class="card-title">
+            Availability
+            <span class="opt" style="font-weight:400;">(across all copies of this title)</span>
+        </span>
+        <span style="font-size:13px; color:var(--ink-faint);">
+            Currently:
+            <strong style="color:{% if available_count > 0 %}var(--green){% else %}#B91C1C{% endif %}">
+                {{ available_count }} / {{ book.copies }}
+            </strong>
+            {% if available_count == 0 %}
+            <span style="background:#FEE2E2; color:#B91C1C; font-size:11px; font-weight:700;
+                         padding:2px 8px; border-radius:3px; margin-left:6px;">OUT OF STOCK</span>
+            {% endif %}
+        </span>
+    </div>
+    <form method="POST" action="{{ url_for('admin.edit_book') }}">
+        <input type="hidden" name="csrf_token"  value="{{ csrf_token }}">
+        <input type="hidden" name="action"      value="set_availability">
+        <input type="hidden" name="book_code"   value="{{ book.code }}">
+        <div class="card-body">
+            <div style="display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+                <div class="form-group" style="margin:0; flex:1; min-width:160px;">
+                    <label class="form-label">Set Available Copies (of {{ book.copies }})</label>
+                    <input class="form-input" type="number" name="available_copies"
+                           min="0" max="{{ book.copies }}"
+                           value="{{ available_count }}" style="width:100%;">
+                    <span class="form-hint">
+                        Distributes availability across all {{ book.copies }} physical copies of this title
+                        ({{ base_code }}-c.1 … c.{{ book.copies }}). Set to 0 to mark the whole title out of stock.
+                    </span>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; padding-bottom:2px;">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="button" class="btn btn-ghost btn-sm"
+                            onclick="document.querySelector('[name=available_copies]').value=0;
+                                     this.closest('form').submit();">
+                        Mark Out of Stock
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm"
+                            onclick="document.querySelector('[name=available_copies]').value={{ book.copies }};
+                                     this.closest('form').submit();">
+                        Mark All Available
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ══ Add New Physical Copy ══════════════════════════════════════ -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <span class="card-title">Add New Physical Copy</span>
+        <span style="font-size:12px; color:var(--ink-faint);">
+            Next copy will be:
+            <span style="font-family:'Courier New',monospace; color:var(--maroon); font-weight:700;">
+                {{ book.code.rsplit('c.',1)[0] }}c.{{ book.copies + 1 }}
+            </span>
+        </span>
+    </div>
+    <form method="POST" action="{{ url_for('admin.edit_book') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action"     value="add_copy">
+        <input type="hidden" name="book_code"  value="{{ book.code }}">
+        <div class="card-body">
+            <div class="alert alert-info" style="margin-bottom:14px;">
+                <span class="alert-icon">ℹ</span>
+                <span style="font-size:13px;">
+                    All details (title, author, shelf, etc.) are inherited from this entry.
+                    You can optionally upload a different cover for the new copy.
+                </span>
+            </div>
+            <div class="form-group" style="max-width:360px;">
+                <label class="form-label">
+                    Cover Image <span class="opt">(optional — inherits current)</span>
+                </label>
+                <input class="form-input" type="file" name="new_copy_cover"
+                       accept="image/png,image/jpeg,image/webp,image/jpg"
+                       style="height:auto; padding:6px 12px;">
+            </div>
+        </div>
+        <div class="card-footer" style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary"
+                    onclick="return confirm('Add a new physical copy of this book?');">
+                ＋ Add Copy
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- ══ Danger Zone ════════════════════════════════════════════════ -->
+<div class="danger-zone">
+    <div class="danger-zone-title">⚠ Danger Zone — Delete This Copy</div>
+    <p>
+        This deletes only the <strong>{{ book.code }}</strong> entry.
+        Borrow records linked to this copy will have their book reference cleared.
+        This action cannot be undone.
+    </p>
+    <form method="POST" action="{{ url_for('admin.edit_book') }}"
+          onsubmit="return confirm('Delete {{ book.code }}? Linked borrow records will lose their book reference. Cannot be undone.');">
+        <input type="hidden" name="action"     value="delete">
+        <input type="hidden" name="book_code"  value="{{ book.code }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-danger">Delete this entry</button>
+    </form>
+</div>
+
+{% endif %}
+{% endblock %}

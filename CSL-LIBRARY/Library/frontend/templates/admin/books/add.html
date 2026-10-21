@@ -1,0 +1,395 @@
+{% extends "admin/base.html" %}
+{% block title %}Add Book | Admin{% endblock %}
+{% block nav_add_book %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .mode-tabs {
+        display: flex;
+        gap: 0;
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        width: fit-content;
+        margin-bottom: 24px;
+    }
+
+    .mode-tab-input { display: none; }
+
+    .mode-tab-label {
+        padding: 8px 22px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-light);
+        cursor: pointer;
+        background: var(--white);
+        border-right: 1px solid var(--cream-border);
+        transition: all 0.13s;
+        letter-spacing: 0.02em;
+    }
+
+    .mode-tab-label:last-of-type { border-right: none; }
+
+    .mode-tab-input:checked + .mode-tab-label {
+        background: var(--maroon);
+        color: var(--white);
+    }
+
+    /* Show/hide form panels */
+    #manual-form, #excel-form { display: none; }
+    #tab-manual:checked ~ #manual-form { display: block; }
+    #tab-excel:checked  ~ #excel-form  { display: block; }
+
+    /* Code preview box */
+    .code-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .code-pill {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        background: var(--cream-dark);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-sm);
+        padding: 3px 10px;
+        letter-spacing: 0.04em;
+        color: var(--ink);
+    }
+
+    .code-pill.unique   { border-color: var(--green); background: var(--green-pale); color: var(--green); }
+    .code-pill.conflict { border-color: #EF4444; background: #FEF2F2; color: #B91C1C; }
+
+    .excel-errors {
+        background: var(--white);
+        border: 1px solid rgba(122,29,46,0.2);
+        border-radius: var(--radius-sm);
+        padding: 14px 18px;
+        max-height: 280px;
+        overflow-y: auto;
+    }
+
+    .excel-errors li {
+        font-size: 12.5px;
+        color: var(--maroon);
+        padding: 3px 0;
+        border-bottom: 1px solid rgba(122,29,46,0.07);
+        line-height: 1.5;
+    }
+
+    .excel-errors li:last-child { border-bottom: none; }
+
+    .skipped-list li {
+        font-size: 12.5px;
+        color: #7A5A1A;
+        padding: 3px 0;
+    }
+
+    /* Cover upload preview */
+    .cover-upload-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .cover-preview {
+        width: 80px; height: 108px;
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-sm);
+        background: var(--cream-dark);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px; color: var(--cream-border);
+        overflow: hidden; flex-shrink: 0;
+    }
+
+    .cover-preview img { width:100%; height:100%; object-fit:cover; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">Books</div>
+    <h1 class="page-title">Add Book</h1>
+    <p class="page-subtitle">Enter details manually or bulk-import from an Excel file.</p>
+</div>
+
+<!-- Alerts -->
+{% if error %}
+<div class="alert alert-error">
+    <span class="alert-icon">⚠</span>
+    <div>
+        {{ error }}
+        {% if excel_errors %}
+        <div style="margin-top:10px;">
+            <div style="font-size:11.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:8px;">Row Errors</div>
+            <ul class="excel-errors">
+                {% for err in excel_errors %}<li>{{ err }}</li>{% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% if success %}
+<div class="alert alert-success">
+    <span class="alert-icon">✓</span>
+    <div>{{ success }}</div>
+</div>
+{% endif %}
+
+{% if skipped %}
+<div class="alert alert-warning">
+    <span class="alert-icon">⚡</span>
+    <div>
+        <strong>{{ skipped|length }} row(s) skipped</strong> due to duplicate codes:
+        <ul class="skipped-list" style="margin-top:6px;">
+            {% for s in skipped %}<li>{{ s }}</li>{% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<!-- Mode switcher (CSS-only tabs) -->
+<input type="radio" name="mode-tab" id="tab-manual" class="mode-tab-input" checked>
+<input type="radio" name="mode-tab" id="tab-excel"  class="mode-tab-input">
+
+<div class="mode-tabs">
+    <label for="tab-manual" class="mode-tab-label">✎ &nbsp;Manual Entry</label>
+    <label for="tab-excel"  class="mode-tab-label">⊞ &nbsp;Excel Import</label>
+</div>
+
+<!-- ══ MANUAL FORM ══ -->
+<form method="POST" enctype="multipart/form-data" id="manual-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="mode" value="manual">
+
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><span class="card-title">Classification</span></div>
+        <div class="card-body">
+            <div class="form-grid form-grid-3" style="margin-bottom:20px;">
+                <div class="form-group">
+                    <label class="form-label">Main Category</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="main_id" id="sel-main" required>
+                            <option value="">Select…</option>
+                            {% for m in mains %}
+                            <option value="{{ m.id }}" data-name="{{ m.name }}">{{ m.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subject Category</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="subject_id" id="sel-subject" required>
+                            <option value="">Select…</option>
+                            {% for s in subjects %}
+                            <option value="{{ s.id }}" data-name="{{ s.name }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Copies</label>
+                    <input class="form-input" type="number" name="copies" id="inp-copies" value="1" min="1" max="99">
+                    <span class="form-hint">Each copy gets a unique code (c.1, c.2 …)</span>
+                </div>
+            </div>
+
+            <div class="form-grid form-grid-3">
+                <div class="form-group">
+                    <label class="form-label">Running No <span class="opt">(optional — auto)</span></label>
+                    <input class="form-input" type="number" name="running_no" id="inp-running" placeholder="Auto-assigned" min="1">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Code Preview</label>
+                    <div id="code-preview-wrap">
+                        <div class="code-list" id="code-list">
+                            <span style="font-size:13px; color:var(--ink-faint);">Select Main and Subject to preview codes.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><span class="card-title">Book Details</span></div>
+        <div class="card-body">
+            <div class="form-grid form-grid-2" style="margin-bottom:16px;">
+                <div class="form-group full-width">
+                    <label class="form-label">Title</label>
+                    <input class="form-input" type="text" name="title" placeholder="Full book title" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Author <span class="opt">(optional)</span></label>
+                    <input class="form-input" type="text" name="author" placeholder="Author name(s)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Publisher <span class="opt">(optional)</span></label>
+                    <input class="form-input" type="text" name="publisher" placeholder="Publisher">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Edition <span class="opt">(optional)</span></label>
+                    <input class="form-input" type="text" name="edition" placeholder="e.g. 3rd">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Publication Year <span class="opt">(optional)</span></label>
+                    <input class="form-input" type="number" name="publication_year" placeholder="e.g. 2020" min="1800" max="2099">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Shelf Number <span class="opt">(optional)</span></label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="shelf_number">
+                            <option value="">Select shelf…</option>
+                            {% for sh in shelves %}
+                            <option value="{{ sh.name }}">{{ sh.name }}{% if sh.description %} — {{ sh.description }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <span class="form-hint">Add shelves via <a href="{{ url_for('admin.book_codes') }}" style="color:var(--maroon);">Code Maker</a>.</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Price <span class="opt">(optional)</span></label>
+                    <input class="form-input" type="number" name="price" placeholder="₹" min="0">
+                </div>
+                <div class="form-group full-width">
+                    <label class="form-label">Keywords <span class="opt">(optional)</span></label>
+                    <input class="form-input" type="text" name="keywords" placeholder="Comma-separated keywords">
+                </div>
+                <div class="form-group full-width">
+                    <label class="form-label">Remarks <span class="opt">(optional)</span></label>
+                    <textarea class="form-textarea" name="remarks" rows="2" placeholder="Any notes…"></textarea>
+                </div>
+            </div>
+
+            <!-- Cover image -->
+            <div class="form-group">
+                <label class="form-label">Cover Image <span class="opt">(optional)</span></label>
+                <div class="cover-upload-wrap">
+                    <div class="cover-preview" id="cover-preview-box">📖</div>
+                    <div>
+                        <input type="file" name="cover_image" id="cover-input"
+                               accept="image/*" style="display:none;"
+                               onchange="previewCover(this)">
+                        <button type="button" class="btn btn-ghost btn-sm"
+                                onclick="document.getElementById('cover-input').click()">
+                            Choose image
+                        </button>
+                        <div class="form-hint" style="margin-top:6px;">JPG, PNG. Used as thumbnail in the catalogue.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <a href="{{ url_for('admin.books') }}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg">Add Book</button>
+    </div>
+</form>
+
+<!-- ══ EXCEL FORM ══ -->
+<form method="POST" enctype="multipart/form-data" id="excel-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token}}">
+    <input type="hidden" name="mode" value="excel">
+
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+            <span class="card-title">Upload Excel File</span>
+            <a href="{{ url_for('admin.excel_template') }}" class="btn btn-ghost btn-sm">↓ Download Template</a>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info" style="margin-bottom:16px;">
+                <span class="alert-icon">ℹ</span>
+                <div style="font-size:13px; line-height:1.6;">
+                    <strong>Column order:</strong> Main · Subject · Running No (optional) · Title · Author · Publisher · Edition · Publication Year · Shelf No · Keywords · Price · Copies · Remarks<br>
+                    Copies = N creates N separate book entries (e.g. 3 copies → <code style="background:var(--cream-dark); padding:1px 5px; border-radius:3px;">TXT-NAV-001-c.1</code>, <code style="background:var(--cream-dark); padding:1px 5px; border-radius:3px;">c.2</code>, <code style="background:var(--cream-dark); padding:1px 5px; border-radius:3px;">c.3</code>).<br>
+                    <strong>All rows must be error-free</strong> before any are imported.
+                </div>
+            </div>
+
+            <div class="form-group" style="max-width:420px;">
+                <label class="form-label">Excel File (.xlsx)</label>
+                <input class="form-input" type="file" name="excel_file" accept=".xlsx,.xls" required style="height:auto; padding:8px 12px;">
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <a href="{{ url_for('admin.books') }}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg">Import Books</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ── Cover image preview ──────────────────────────
+    function previewCover(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const box = document.getElementById('cover-preview-box');
+                box.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // ── Live code preview ────────────────────────────
+    const selMain    = document.getElementById('sel-main');
+    const selSubject = document.getElementById('sel-subject');
+    const inpRunning = document.getElementById('inp-running');
+    const inpCopies  = document.getElementById('inp-copies');
+    const codeList   = document.getElementById('code-list');
+
+    let debounceTimer = null;
+
+    function fetchPreview() {
+        const mainOpt    = selMain.options[selMain.selectedIndex];
+        const subjectOpt = selSubject.options[selSubject.selectedIndex];
+        const mainName   = mainOpt    ? mainOpt.dataset.name    : '';
+        const subName    = subjectOpt ? subjectOpt.dataset.name : '';
+
+        if (!mainName || !subName) {
+            codeList.innerHTML = '<span style="font-size:13px; color:var(--ink-faint);">Select Main and Subject to preview codes.</span>';
+            return;
+        }
+
+        const running = inpRunning.value.trim();
+        const copies  = inpCopies.value  || '1';
+
+        const url = `/admin/books/check-code?main=${encodeURIComponent(mainName)}&subject=${encodeURIComponent(subName)}&running=${running}&copies=${copies}`;
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ready) {
+                    codeList.innerHTML = '<span style="font-size:13px; color:var(--ink-faint);">—</span>';
+                    return;
+                }
+                const cls   = data.unique ? 'unique' : 'conflict';
+                const pills = data.codes.map(c => `<span class="code-pill ${cls}">${c}</span>`).join('');
+                const note  = data.unique
+                    ? '<span style="font-size:11.5px; color:var(--green); margin-left:4px;">✓ All codes available</span>'
+                    : '<span style="font-size:11.5px; color:#B91C1C; margin-left:4px;">⚠ One or more codes already exist</span>';
+                codeList.innerHTML = pills + note;
+            })
+            .catch(() => { codeList.innerHTML = '<span style="font-size:13px; color:var(--ink-faint);">Preview unavailable.</span>'; });
+    }
+
+    function schedulePreview() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(fetchPreview, 280);
+    }
+
+    selMain.addEventListener('change',    fetchPreview);
+    selSubject.addEventListener('change', fetchPreview);
+    inpRunning.addEventListener('input',  schedulePreview);
+    inpCopies.addEventListener('input',   schedulePreview);
+</script>
+{% endblock %}

@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block title %}Home | CSL Library — Basic Design Department{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('auth.guest') }}" class="btn-ghost">Browse as Guest</a>
+<a href="{{ url_for('auth.login') }}" class="btn-primary">Sign In</a>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* ─── Hero ──────────────────────────────────────── */
+    .hero {
+        background: var(--white);
+        border-bottom: 1px solid var(--cream-border);
+        padding: 72px 32px 64px;
+        background-image: url("{{ url_for('static', filename='Background/background-banner.png') }}");
+        background-size: cover;
+        background-position: center;
+    }
+    .hero-inner {
+        max-width: 760px;
+        margin: 0 auto;
+        text-align: center;
+        background-color: #ffffffda;
+        border-radius: 10px;
+    }
+    .hero {
+        position: relative;
+        background-image: url("{{ url_for('static', filename='Background/background-banner.png') }}");
+        background-size: cover;
+        background-position: center;
+    }
+
+    .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.578); /* 50% dark overlay */
+    }
+
+    .hero-inner {
+        position: relative;
+        z-index: 1;
+    }
+    .hero-eyebrow {
+        animation: heroFadeIn 0.6s ease-out forwards;
+    }
+
+    .hero-title {
+        opacity: 0;
+        animation: heroFadeIn 0.8s ease-out 0.2s forwards;
+    }
+
+    .hero-description {
+        opacity: 0;
+        animation: heroFadeIn 0.8s ease-out 0.4s forwards;
+    }
+
+    .hero-cta {
+        opacity: 0;
+        animation: heroFadeIn 0.8s ease-out 0.6s forwards;
+    }
+    @keyframes heroFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(25px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--maroon);
+        background: var(--maroon-pale);
+        border: 1px solid rgba(122,29,46,0.12);
+        border-radius: 20px;
+        padding: 4px 14px;
+        margin-bottom: 28px;
+        margin-top: 10px;
+    }
+
+    .hero-eyebrow::before {
+        content: '';
+        width: 6px; height: 6px;
+        background: var(--maroon);
+        border-radius: 50%;
+    }
+
+    .hero-title {
+        font-family: var(--font-display);
+        font-size: clamp(36px, 5vw, 56px);
+        font-weight: 600;
+        color: var(--ink);
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        margin-bottom: 20px;
+        border: 10px;
+    }
+
+    .hero-title em {
+        font-style: italic;
+        color: var(--maroon);
+    }
+
+    .hero-description {
+        font-size: 17px;
+        color: black;
+        line-height: 1.7;
+        max-width: 540px;
+        margin: 0 auto 40px;
+        font-weight: 300;
+    }
+
+    .hero-cta {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .cta-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-body);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--white);
+        background: var(--maroon);
+        border: none;
+        border-radius: var(--radius-sm);
+        padding: 11px 24px;
+        text-decoration: none;
+        transition: all 0.15s;
+        letter-spacing: 0.01em;
+        margin-bottom: 10px;
+    }
+    .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(40px);
+        transition: all 0.8s ease;
+    }
+
+    .animate-on-scroll.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .cta-primary:hover { background: var(--maroon-deep); transform: translateY(-1px); }
+
+    .cta-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-body);
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--ink-light);
+        background: transparent;
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-sm);
+        padding: 11px 24px;
+        text-decoration: none;
+        transition: all 0.15s;
+        margin-bottom: 10px;
+    }
+
+    .cta-secondary:hover { color: var(--ink); border-color: #B0A898; background: var(--cream); }
+
+    /* ─── Stats Strip ───────────────────────────────── */
+    .stats-strip {
+        background: linear-gradient(90deg,var(--cream),var(--cream-dark));
+        border-bottom: 1px solid var(--cream-border);
+        padding: 24px 32px;
+    }
+
+    .stats-inner {
+        max-width: 760px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 12px 16px;
+        border-right: 1px solid var(--cream-border);
+    }
+
+    .stat-item:last-child { border-right: none; }
+
+    .stat-number {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--maroon);
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 11.5px;
+        font-weight: 500;
+        color: var(--ink-faint);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    /* ─── Features Grid ─────────────────────────────── */
+    .section {
+        padding: 64px 32px;
+    }
+
+    .section-inner {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+
+    .section-header {
+        margin-bottom: 40px;
+    }
+
+    .section-label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        margin-bottom: 10px;
+    }
+
+    .section-title {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .feature-card {
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-md);
+        padding: 28px 24px;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: var(--maroon);
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .feature-card:hover {
+        border-color: #C8C0B0;
+        box-shadow: var(--shadow-card);
+        transform: translateY(-2px);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+        width: 40px; height: 40px;
+        background: var(--maroon-pale);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+
+    .feature-title {
+        font-family: var(--font-display);
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 8px;
+    }
+
+    .feature-desc {
+        font-size: 13.5px;
+        color: var(--ink-light);
+        line-height: 1.6;
+        font-weight: 300;
+    }
+
+    /* ─── Access Cards ──────────────────────────────── */
+    .access-section {
+        background: var(--white);
+        border-top: 1px solid var(--cream-border);
+        border-bottom: 1px solid var(--cream-border);
+        padding: 64px 32px;
+    }
+
+    .access-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        max-width: 860px;
+        margin: 0 auto;
+    }
+
+    .access-card {
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-md);
+        padding: 32px 24px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.2s;
+        background: var(--cream);
+    }
+
+    .access-card:hover {
+        background: var(--white);
+        border-color: var(--maroon);
+        box-shadow: var(--shadow-card);
+        transform: translateY(-2px);
+    }
+
+    .access-card-icon {
+        font-size: 28px;
+        margin-bottom: 14px;
+    }
+
+    .access-card-title {
+        font-family: var(--font-display);
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 8px;
+    }
+
+    .access-card-desc {
+        font-size: 13px;
+        color: var(--ink-light);
+        line-height: 1.5;
+        margin-bottom: 20px;
+        font-weight: 300;
+    }
+
+    .access-badge {
+        display: inline-block;
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+        letter-spacing: 0.05em;
+    }
+
+    .badge-maroon { background: var(--maroon-pale); color: var(--maroon); }
+    .badge-gold   { background: var(--gold-pale);   color: var(--gold);   }
+    .badge-ink    { background: var(--cream-dark);  color: var(--ink-light); }
+
+    /* ─── Footer Strip ──────────────────────────────── */
+    .footer-strip {
+        padding: 32px;
+        text-align: center;
+        font-size: 12.5px;
+        color: var(--ink-faint);
+        border-top: 1px solid var(--cream-border)
+    }
+
+    /* ─── Responsive ─────────────────────────────────── */
+    @media (max-width: 768px) {
+        .hero { padding: 48px 20px; }
+        .stats-inner { grid-template-columns: repeat(2, 1fr); }
+        .stat-item:nth-child(2) { border-right: none; }
+        .feature-grid { grid-template-columns: 1fr; }
+        .access-grid { grid-template-columns: 1fr; max-width: 360px; }
+        .section { padding: 48px 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-inner">
+        <span class="hero-eyebrow">CSL LIBRARY</span>
+        <h1 class="hero-title">
+            Knowledge, <em>catalogued</em><br>and within reach.
+        </h1>
+        <p class="hero-description">
+            CSL Library brings together technical references, design manuals, standards, and journals — searchable, trackable, and managed in one place.
+        </p>
+        <div class="hero-cta">
+            <a href="{{ url_for('auth.login') }}" class="cta-primary">
+                Access Library →
+            </a>
+            <a href="{{ url_for('auth.guest') }}" class="cta-secondary">
+                Browse Catalogue
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Stats strip -->
+<div class="stats-strip">
+    <div class="stats-inner">
+        <div class="stat-item animate-on-scroll">
+            <div class="stat-number">4</div>
+            <div class="stat-label">Main Categories</div>
+        </div>
+        <div class="stat-item animate-on-scroll">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Digital Access</div>
+        </div>
+        <div class="stat-item animate-on-scroll">
+            <div class="stat-number">Multi</div>
+            <div class="stat-label">Copy Tracking</div>
+        </div>
+        <div class="stat-item animate-on-scroll">
+            <div class="stat-number">JWT</div>
+            <div class="stat-label">Secure Auth</div>
+        </div>
+    </div>
+</div>
+
+<!-- Features -->
+<section class="section">
+    <div class="section-inner">
+        <div class="section-header">
+            <div class="stat-item animate-on-scroll"></div>
+            <div class="section-label">What's Inside</div>
+            <h2 class="section-title">Everything a department library needs</h2>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">📚</div>
+                <div class="feature-title">Book Catalogue</div>
+                <div class="feature-desc">Books with cover images, structured codes, shelf numbers, subject categories, and copy tracking — all at a glance.</div>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">🔍</div>
+                <div class="feature-title">Smart Search</div>
+                <div class="feature-desc">Search by title, author, subject, keyword, or code segment. Find any reference in seconds.</div>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">👤</div>
+                <div class="feature-title">Employee Records</div>
+                <div class="feature-desc">Manage employees by department and designation. Track borrowing history and activate accounts from admin.</div>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">✅</div>
+                <div class="feature-title">Approval Workflow</div>
+                <div class="feature-desc">Employees request books; admins approve. Status indicators show return overdue, active borrows, and available members.</div>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">Borrow Records</div>
+                <div class="feature-desc">Full history of who borrowed what, when, and whether it was returned on time.</div>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">🔐</div>
+                <div class="feature-title">Role-Based Access</div>
+                <div class="feature-desc">Guest, Employee, and Admin roles with JWT-secured sessions and admin-controlled account activation.</div>
+            </div>
+        </div>
+    </div> 
+</section>
+
+<!-- Access cards -->
+<section class="access-section">
+    <div style="max-width:960px; margin:0 auto;">
+        <div class="section-header" style="text-align:center; margin-bottom:36px;">
+            <div class="section-label">Get Started</div>
+            <h2 class="section-title">Choose how you'd like to access</h2>
+        </div>
+        <div class="access-grid">
+            <a href="{{ url_for('auth.guest') }}" class="access-card animate-on-scroll">
+                <div class="access-card-icon">👁</div>
+                <div class="access-card-title">Guest</div>
+                <div class="access-card-desc">Browse the catalogue with your employee reference. No account needed.</div>
+                <span class="access-badge badge-ink">Browse Only</span>
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="access-card animate-on-scroll">
+                <div class="access-card-icon">📖</div>
+                <div class="access-card-title">Employee</div>
+                <div class="access-card-desc">Search, request, and track your book borrowing history.</div>
+                <span class="access-badge badge-gold">Request Books</span>
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="access-card animate-on-scroll">
+                <div class="access-card-icon">⚙️</div>
+                <div class="access-card-title">Admin</div>
+                <div class="access-card-desc">Manage books, employees, approvals, and the full library system.</div>
+                <span class="access-badge badge-maroon">Full Access</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<footer class="footer-strip">
+    Cochin Shipyard Limited  Library · Developed By Basic Design Dept
+</footer>
+<script>
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add("show");
+        } else {
+            entry.target.classList.remove("show");
+        }
+    });
+}, {
+    threshold: 0.15
+});
+
+document.querySelectorAll(".animate-on-scroll").forEach(el => {
+    observer.observe(el);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends "guest/base.html" %}
+{% block title %}My Account | CSL Library{% endblock %}
+{% block nav_account %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .profile-hero {
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        padding: 32px;
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        margin-bottom: 32px;
+    }
+    .profile-avatar {
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        background: var(--gold-pale);
+        color: var(--maroon);
+        font-family: var(--font-display);
+        font-size: 26px; font-weight: 600;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        border: 2px solid rgba(122,29,46,0.12);
+    }
+    .profile-info { flex: 1; min-width: 0; }
+    .profile-name {
+        font-family: var(--font-display);
+        font-size: 22px; font-weight: 600;
+        color: var(--ink); margin-bottom: 4px;
+    }
+    .profile-meta {
+        display: flex; align-items: center;
+        gap: 16px; flex-wrap: wrap; margin-bottom: 8px;
+    }
+    .profile-meta-item {
+        font-size: 13px; color: var(--ink-light);
+        display: flex; align-items: center; gap: 5px;
+    }
+    .profile-meta-icon { opacity: 0.5; font-size: 12px; }
+    .profile-code {
+        font-family: 'Courier New', monospace;
+        font-size: 11px; color: var(--ink-faint);
+        letter-spacing: 0.06em;
+        background: var(--cream-dark);
+        padding: 3px 8px; border-radius: var(--radius-sm);
+        display: inline-block;
+    }
+    .profile-actions { margin-left: auto; flex-shrink: 0; align-self: flex-start; }
+
+    .sponsor-card {
+        background: var(--gold-pale);
+        border: 1px solid rgba(200,148,58,0.2);
+        border-radius: var(--radius-md);
+        padding: 16px 20px;
+        display: flex; align-items: center; gap: 14px;
+        margin-bottom: 32px;
+    }
+    .sponsor-icon { font-size: 20px; flex-shrink: 0; }
+    .sponsor-label {
+        font-size: 10.5px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.08em;
+        color: #8A6018; margin-bottom: 2px;
+    }
+    .sponsor-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+    .sponsor-meta { font-size: 12px; color: var(--ink-light); margin-top: 2px; }
+    .sponsor-code-chip {
+        font-family: 'Courier New', monospace;
+        font-size: 11px; font-weight: 700;
+        color: #8A6018;
+        background: rgba(200,148,58,0.15);
+        border-radius: 3px; padding: 2px 7px;
+        margin-left: 8px;
+    }
+
+    .section-label {
+        font-size: 11px; font-weight: 700;
+        letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--ink-faint); margin-bottom: 14px;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after {
+        content: ''; flex: 1; height: 1px;
+        background: var(--cream-border);
+    }
+
+    @media (max-width: 768px) {
+        .profile-hero { flex-direction: column; align-items: flex-start; gap: 16px; }
+        .profile-actions { margin-left: 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Profile Hero ─────────────────────────────────────────── #}
+<div class="profile-hero">
+    <div class="profile-avatar">🪪</div>
+    <div class="profile-info">
+        <div class="profile-name">{{ guest.name }}</div>
+        <div class="profile-meta">
+            {% if guest.contact_number %}
+            <span class="profile-meta-item">
+                <span class="profile-meta-icon">◎</span> {{ guest.contact_number }}
+            </span>
+            {% endif %}
+            <span class="profile-meta-item">
+                <span class="profile-meta-icon">◈</span> Guest Account
+            </span>
+        </div>
+        <span class="profile-code">GUEST #{{ guest.id }}</span>
+    </div>
+    <div class="profile-actions">
+        <a href="{{ url_for('auth.logout') }}"
+           class="btn btn-danger btn-sm"
+           onclick="return confirm('Sign out? Your guest account will be removed.');">
+            Sign Out
+        </a>
+    </div>
+</div>
+
+{# ── Sponsor Info ─────────────────────────────────────────── #}
+{% if sponsor %}
+<div class="sponsor-card">
+    <div class="sponsor-icon">👤</div>
+    <div>
+        <div class="sponsor-label">Sponsored by</div>
+        <div class="sponsor-name">
+            {{ sponsor.name }}
+            <span class="sponsor-code-chip">{{ sponsor.employee_code }}</span>
+        </div>
+        <div class="sponsor-meta">
+            {% if sponsor.department %}{{ sponsor.department }}{% endif %}
+            {% if sponsor.department and sponsor.designation %} — {% endif %}
+            {% if sponsor.designation %}{{ sponsor.designation }}{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Guest Notice ─────────────────────────────────────────── #}
+<div class="section-label">Account Info</div>
+<div class="card" style="margin-bottom: 24px;">
+    <div class="card-body">
+        <div class="alert alert-info" style="background-color: rgb(255, 115, 115);">
+            <div style="font-size: 13px;">
+                You are browsing as a <strong>guest</strong>. 
+                To borrow books, please ask your sponsor 
+                <strong>{{ sponsor.name if sponsor else guest.employee_code }}</strong> 
+                to make a request on your behalf. 
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                    gap: 16px; margin-top: 16px;">
+            <div>
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+                            letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 3px;">
+                    Guest ID
+                </div>
+                <div style="font-family: 'Courier New', monospace; font-size: 14px;
+                            font-weight: 700; color: var(--maroon);">
+                    #{{ guest.id }}
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+                            letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 3px;">
+                    Contact
+                </div>
+                <div style="font-size: 13.5px; color: var(--ink);">
+                    {{ guest.contact_number or '—' }}
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+                            letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 3px;">
+                    Registered
+                </div>
+                <div style="font-size: 13.5px; color: var(--ink);">
+                    {% if guest.created_at %}
+                        {{ guest.created_at.strftime('%d %b %Y') }}
+                    {% else %}—{% endif %}
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+                            letter-spacing: 0.08em; color: var(--ink-faint); margin-bottom: 3px;">
+                    Sponsor
+                </div>
+                <div style="font-size: 13.5px; color: var(--ink);">
+                    {{ sponsor.name if sponsor else guest.employee_code }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

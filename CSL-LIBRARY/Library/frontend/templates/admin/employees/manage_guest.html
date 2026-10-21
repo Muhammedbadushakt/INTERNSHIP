@@ -1,0 +1,373 @@
+{% extends "admin/base.html" %}
+{% block title %}Manage Guest | Admin{% endblock %}
+{% block nav_manage_guest %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .status-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .status-tab-input { display: none; }
+    .status-tab-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px 12px;
+        border: 1.5px solid var(--cream-border);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        background: var(--cream);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-light);
+        transition: all 0.13s;
+    }
+    .status-tab-label:hover { border-color: #B0A898; background: var(--cream-dark); }
+    .status-tab-input:checked + .status-tab-label {
+        border-color: var(--maroon);
+        background: var(--maroon-pale);
+        color: var(--maroon);
+    }
+
+    .danger-zone {
+        border: 1px solid #FCA5A5;
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+        background: #FFF5F5;
+        margin-top: 20px;
+    }
+    .danger-zone-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #B91C1C;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    /* ── Sponsor preview chip ── */
+    .sponsor-preview {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--gold-pale);
+        border: 1px solid rgba(200,148,58,0.2);
+        border-radius: var(--radius-sm);
+        padding: 9px 12px;
+        margin-top: 6px;
+        font-size: 13px;
+    }
+    .sponsor-preview-code {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: #8A6018;
+        background: rgba(200,148,58,0.15);
+        border-radius: 3px;
+        padding: 2px 6px;
+    }
+    .sponsor-preview-name { color: var(--ink); font-weight: 500; }
+    .sponsor-preview-dept { color: var(--ink-light); font-size: 12px; }
+
+    /* ── Guest ID badge shown after add ── */
+    .guest-id-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--maroon);
+        background: var(--maroon-pale);
+        border: 1px solid rgba(122,29,46,0.15);
+        border-radius: 99px;
+        padding: 2px 10px;
+    }
+
+    .opt { font-weight: 400; color: var(--ink-faint); font-size: 11px; }
+
+    .search-input-wrap {
+        display: flex;
+        align-items: center;
+        background: var(--white);
+        border: 1px solid var(--cream-border);
+        border-radius: var(--radius-sm);
+        padding: 0 10px;
+        gap: 6px;
+        transition: border-color 0.15s;
+    }
+    .search-input-wrap:focus-within { border-color: var(--maroon); box-shadow: 0 0 0 3px rgba(122,29,46,0.08); }
+    .search-icon { color: var(--ink-faint); }
+    .search-input-wrap .form-input { border: none; box-shadow: none; background: transparent; }
+    .search-input-wrap .form-input:focus { box-shadow: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">People</div>
+    <h1 class="page-title">Manage Guests</h1>
+    <p class="page-subtitle">Add a new guest, or search an existing one by ID to edit or remove.</p>
+</div>
+
+{# ── Alerts ──────────────────────────────────────────────────── #}
+{% if error %}
+<div class="alert alert-error"><span class="alert-icon">⚠</span><div>{{ error }}</div></div>
+{% endif %}
+{% if success %}
+<div class="alert alert-success"><span class="alert-icon">✓</span><div>{{ success }}</div></div>
+{% endif %}
+{% if search_error %}
+<div class="alert alert-warning"><span class="alert-icon">⚡</span><div>{{ search_error }}</div></div>
+{% endif %}
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-items:start;">
+
+    {# ══════════════════════════════════════════════ #}
+    {# LEFT — Add Guest                              #}
+    {# ══════════════════════════════════════════════ #}
+    <div class="card">
+        <div class="card-header"><span class="card-title">Add New Guest</span></div>
+        <form method="POST" action="{{ url_for('admin.manage_guest') }}">
+            <input type="hidden" name="action" value="add">
+            <div class="card-body">
+                <div class="form-grid form-grid-2" style="margin-bottom:16px;">
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Full Name <span style="color:var(--maroon);">*</span></label>
+                        <input class="form-input" type="text" name="name"
+                               placeholder="e.g. Arjun Mehta" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">
+                            Sponsor Employee Code <span style="color:var(--maroon);">*</span>
+                        </label>
+                        <input class="form-input" type="text" name="employee_code"
+                               id="add-sponsor-code"
+                               placeholder="e.g. EMP-042"
+                               style="text-transform:uppercase;"
+                               oninput="this.value=this.value.toUpperCase(); previewSponsor('add-sponsor-code','add-sponsor-preview')"
+                               required>
+                        <div id="add-sponsor-preview" style="display:none;" class="sponsor-preview">
+                            <span class="sponsor-preview-code" id="add-preview-code"></span>
+                            <div>
+                                <div class="sponsor-preview-name" id="add-preview-name"></div>
+                                <div class="sponsor-preview-dept" id="add-preview-dept"></div>
+                            </div>
+                        </div>
+                        <div style="font-size:11.5px; color:var(--ink-faint); margin-top:5px;">
+                            Sponsor must have an active CSL Library account.
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Contact Number <span class="opt">(optional)</span></label>
+                        <input class="form-input" type="text" name="contact_number"
+                               placeholder="e.g. 9876543210">
+                    </div>
+
+                </div>
+            </div>
+            <div class="card-footer" style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Add Guest</button>
+            </div>
+        </form>
+    </div>
+
+    {# ══════════════════════════════════════════════ #}
+    {# RIGHT — Find + Edit + Delete                  #}
+    {# ══════════════════════════════════════════════ #}
+    <div>
+
+        {# ── Search by ID ──────────────────────────── #}
+        <div class="card" style="margin-bottom:16px;">
+            <div class="card-header"><span class="card-title">Find Guest</span></div>
+            <form method="GET" action="{{ url_for('admin.manage_guest') }}">
+                <div class="card-body" style="padding:16px 20px;">
+                    <div style="display:flex; gap:10px;">
+                        <div class="search-input-wrap" style="flex:1;">
+                            <span class="search-icon">⌕</span>
+                            <input class="form-input" type="number" name="id"
+                                   value="{{ request.args.get('id','') }}"
+                                   placeholder="Guest ID…"
+                                   min="1">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Find</button>
+                    </div>
+                    <div style="margin-top:10px; font-size:12px; color:var(--ink-faint);">
+                        Guest IDs are shown in the
+                        <a href="{{ url_for('admin.employees', tab='guests') }}"
+                           style="color:var(--maroon); text-decoration:none;">Guests list</a>
+                        and on each guest's detail page.
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {% if guest %}
+        {# ── Edit Form ─────────────────────────────── #}
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title" style="display:flex; align-items:center; gap:8px;">
+                    <span>{{ guest.name }}</span>
+                    <span class="guest-id-badge">#{{ guest.id }}</span>
+                </span>
+                <span class="badge {% if guest.status == 'ACTIVE' %}badge-green{% else %}badge-red{% endif %}">
+                    {{ guest.status }}
+                </span>
+            </div>
+
+            <form method="POST" action="{{ url_for('admin.manage_guest') }}">
+                <input type="hidden" name="action"   value="edit">
+                <input type="hidden" name="guest_id" value="{{ guest.id }}">
+
+                <div class="card-body">
+                    <div class="alert alert-info" style="margin-bottom:14px;">
+                        <span class="alert-icon">ℹ</span>
+                        <span style="font-size:13px;">Leave blank to keep the current value.</span>
+                    </div>
+
+                    <div class="form-grid form-grid-2" style="margin-bottom:14px;">
+
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                Name <span class="opt">({{ guest.name }})</span>
+                            </label>
+                            <input class="form-input" type="text" name="name"
+                                   placeholder="Leave blank to keep">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                Contact Number <span class="opt">({{ guest.contact_number or 'none' }})</span>
+                            </label>
+                            <input class="form-input" type="text" name="contact_number"
+                                   placeholder="Leave blank to keep">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                Sponsor Code
+                                <span class="opt">(currently {{ guest.employee_code }})</span>
+                            </label>
+                            <input class="form-input" type="text" name="employee_code"
+                                   id="edit-sponsor-code"
+                                   placeholder="Leave blank to keep"
+                                   style="text-transform:uppercase;"
+                                   oninput="this.value=this.value.toUpperCase(); previewSponsor('edit-sponsor-code','edit-sponsor-preview')">
+                            <div id="edit-sponsor-preview" style="display:none;" class="sponsor-preview">
+                                <span class="sponsor-preview-code" id="edit-preview-code"></span>
+                                <div>
+                                    <div class="sponsor-preview-name" id="edit-preview-name"></div>
+                                    <div class="sponsor-preview-dept" id="edit-preview-dept"></div>
+                                </div>
+                            </div>
+
+                            {# Current sponsor info ─────────────────────── #}
+                            {% if guest.sponsor %}
+                            <div class="sponsor-preview" style="margin-top:6px;">
+                                <span class="sponsor-preview-code">{{ guest.sponsor.employee_code }}</span>
+                                <div>
+                                    <div class="sponsor-preview-name">{{ guest.sponsor.name }}</div>
+                                    <div class="sponsor-preview-dept">
+                                        {{ guest.sponsor.department or '' }}
+                                        {% if guest.sponsor.designation %}
+                                            {% if guest.sponsor.department %} — {% endif %}
+                                            {{ guest.sponsor.designation }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Status</label>
+                            <div class="status-tabs">
+                                <input type="radio" name="status" id="edit-status-active"
+                                       value="ACTIVE" class="status-tab-input"
+                                       {% if guest.status == 'ACTIVE' %}checked{% endif %}>
+                                <label for="edit-status-active" class="status-tab-label">✓ &nbsp;Active</label>
+
+                                <input type="radio" name="status" id="edit-status-inactive"
+                                       value="INACTIVE" class="status-tab-input"
+                                       {% if guest.status == 'INACTIVE' %}checked{% endif %}>
+                                <label for="edit-status-inactive" class="status-tab-label">✕ &nbsp;Inactive</label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                    <a href="{{ url_for('admin.guest_detail', guest_id=guest.id) }}"
+                       class="btn btn-ghost btn-sm">View Full Detail →</a>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+
+            {# ── Danger Zone ───────────────────────── #}
+            <div class="danger-zone" style="margin:0 20px 20px;">
+                <div class="danger-zone-title">⚠ Danger Zone</div>
+                <p style="font-size:12.5px; color:#7F1D1D; margin-bottom:12px;">
+                    Deleting this guest removes their account permanently. Any associated borrow records
+                    will lose their guest reference.
+                </p>
+                <form method="POST" action="{{ url_for('admin.manage_guest') }}"
+                      onsubmit="return confirm('Delete guest {{ guest.name }} (#{{ guest.id }})? This cannot be undone.');">
+                    <input type="hidden" name="action"   value="delete">
+                    <input type="hidden" name="guest_id" value="{{ guest.id }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete Guest</button>
+                </form>
+            </div>
+
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{# ── Live sponsor preview via fetch ──────────────────────────── #}
+<script>
+const sponsorCache = {};
+
+async function previewSponsor(inputId, previewId) {
+    const code     = document.getElementById(inputId).value.trim();
+    const wrap     = document.getElementById(previewId);
+    const codeEl   = document.getElementById(previewId.replace('preview', 'preview-code'));
+    const nameEl   = document.getElementById(previewId.replace('preview', 'preview-name'));
+    const deptEl   = document.getElementById(previewId.replace('preview', 'preview-dept'));
+
+    if (code.length < 2) { wrap.style.display = 'none'; return; }
+
+    if (sponsorCache[code]) {
+        showPreview(wrap, codeEl, nameEl, deptEl, sponsorCache[code]);
+        return;
+    }
+
+    try {
+        const res  = await fetch(`{{ url_for('admin.sponsor_lookup') }}?code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+        if (data.found) {
+            sponsorCache[code] = data;
+            showPreview(wrap, codeEl, nameEl, deptEl, data);
+        } else {
+            wrap.style.display = 'none';
+        }
+    } catch(e) {
+        wrap.style.display = 'none';
+    }
+}
+
+function showPreview(wrap, codeEl, nameEl, deptEl, data) {
+    codeEl.textContent = data.code;
+    nameEl.textContent = data.name;
+    deptEl.textContent = [data.department, data.designation].filter(Boolean).join(' — ');
+    wrap.style.display = 'flex';
+}
+</script>
+{% endblock %}

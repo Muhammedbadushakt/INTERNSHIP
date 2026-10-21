@@ -1,0 +1,129 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ employee.name }} | Admin{% endblock %}
+{% block nav_employees %}active{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px;">
+    <a href="{{ url_for('admin.employees') }}" class="btn btn-ghost btn-sm">← Back to Employees</a>
+</div>
+
+<div class="page-header-row page-header">
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <div style="width:52px; height:52px; border-radius:50%; background:var(--maroon-pale);
+                    display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+            👤
+        </div>
+        <div>
+            <div class="page-eyebrow">Employee</div>
+            <h1 class="page-title" style="font-size:22px;">{{ employee.name }}</h1>
+            <div style="font-size:12.5px; color:var(--ink-faint); margin-top:2px;">{{ employee.employee_code }}</div>
+        </div>
+        <span class="dot dot-{{ indicator }}" style="width:12px; height:12px;"
+              title="{% if indicator=='green' %}No active borrows{% elif indicator=='orange' %}Has active borrow{% else %}Overdue{% endif %}"></span>
+    </div>
+    <a href="{{ url_for('admin.manage_employee') }}?code={{ employee.employee_code }}"
+       class="btn btn-ghost">Edit Employee</a>
+</div>
+
+<!-- Stats -->
+<div class="stat-grid" style="margin-bottom:24px;">
+    <div class="stat-card stat-maroon">
+        <div class="stat-label">Total Borrowed</div>
+        <div class="stat-value">{{ total_taken }}</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-label">Returned</div>
+        <div class="stat-value">{{ total_returned }}</div>
+    </div>
+    <div class="stat-card stat-gold">
+        <div class="stat-label">Currently Holding</div>
+        <div class="stat-value">{{ currently_have|length }}</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value">{{ overdue|length }}</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:start;">
+
+    <!-- Info card -->
+    <div class="card">
+        <div class="card-header"><span class="card-title">Details</span></div>
+        <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+            {% set fields = [
+                ('Department',  employee.department),
+                ('Designation', employee.designation),
+                ('Gmail',       employee.gmail_id),
+                ('Contact',     employee.contact_number),
+                ('Status',      employee.status),
+            ] %}
+            {% for key, val in fields %}
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px;">{{ key }}</div>
+                <div style="font-size:13.5px; font-weight:500; color:var(--ink);">{{ val or '—' }}</div>
+            </div>
+            {% endfor %}
+            {% if roles %}
+            <div>
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px;">Roles</div>
+                <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                    {% for r in roles %}
+                    <span class="badge {% if r.name == 'admin' %}badge-maroon{% else %}badge-grey{% endif %}">{{ r.name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Records -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Borrow History</span>
+            <span class="badge badge-grey">{{ all_records|length }}</span>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead><tr>
+                    <th>Book Code</th>
+                    <th>Status</th>
+                    <th>Issued</th>
+                    <th>Due</th>
+                    <th>Returned</th>
+                </tr></thead>
+                <tbody>
+                {% for r in all_records %}
+                <tr>
+                    <td style="font-family:'Courier New',monospace; font-size:12.5px;">{{ r.book.code if r.book else '—' }}</td>
+                    <td>
+                        {% if r.status == 'APPROVED' %}
+                            <span class="badge badge-gold">Active</span>
+                        {% elif r.status == 'RETURNED' %}
+                            <span class="badge badge-green">Returned</span>
+                        {% elif r.status == 'PENDING' %}
+                            <span class="badge badge-grey">Pending</span>
+                        {% else %}
+                            <span class="badge badge-red">{{ r.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:12px; color:var(--ink-light);">
+                        {% if r.issued_at %}{{ r.issued_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                    </td>
+                    <td style="font-size:12px; color:{% if r.expected_at  %}#B91C1C{% else %}var(--ink-light){% endif %};">
+                        {% if r.expected_at %}{{ r.expected_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                    </td>
+                    <td style="font-size:12px; color:var(--ink-light);">
+                        {% if r.returned_at %}{{ r.returned_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align:center; color:var(--ink-faint); padding:24px;">No records yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

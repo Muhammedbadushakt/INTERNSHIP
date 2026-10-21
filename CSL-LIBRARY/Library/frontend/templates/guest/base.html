@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CSL Library — Guest{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+
+    <style>
+        /* ─── Design Tokens ─────────────────────────────── */
+        :root {
+            --cream:        #F7F5F0;
+            --cream-dark:   #EDE9E0;
+            --cream-border: #D9D4C8;
+            --ink:          #1A1814;
+            --ink-light:    #6B6560;
+            --ink-faint:    #A89F95;
+            --maroon:       #7A1D2E;
+            --maroon-deep:  #5C1522;
+            --maroon-pale:  #F5ECEE;
+            --gold:         #C8943A;
+            --gold-pale:    #FBF4E8;
+            --white:        #FFFFFF;
+            --green:        #1E6B45;
+            --green-pale:   #EAF4EE;
+            --red-pale:     #FDEEEE;
+            --shadow-soft:  0 1px 4px rgba(26,24,20,0.06), 0 4px 16px rgba(26,24,20,0.04);
+            --shadow-card:  0 2px 8px rgba(26,24,20,0.08), 0 8px 32px rgba(26,24,20,0.05);
+            --radius-sm:    4px;
+            --radius-md:    8px;
+            --radius-lg:    12px;
+            --font-display: 'Lora', Georgia, serif;
+            --font-body:    'DM Sans', system-ui, sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-body);
+            background: var(--cream);
+            color: var(--ink);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ─── Site Header ───────────────────────────────── */
+        .site-header {
+            background: var(--white);
+            border-bottom: 1px solid var(--cream-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-inner {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 0 32px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        /* ─── Guest badge strip under header ───────────── */
+        .guest-strip {
+            background: var(--gold-pale);
+            border-bottom: 1px solid rgba(200,148,58,0.25);
+            padding: 5px 32px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gold);
+            letter-spacing: 0.02em;
+        }
+        .guest-strip strong { color: #9B6E22; }
+
+        /* ─── Brand ─────────────────────────────────────── */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .brand-logo { width: 40px; height: 40px; object-fit: contain; }
+        .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+        .brand-name {
+            font-family: var(--font-display);
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--maroon);
+            letter-spacing: 0.02em;
+        }
+        .brand-sub {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--ink-faint);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .header-divider { width: 1px; height: 28px; background: var(--cream-border); flex-shrink: 0; }
+
+        /* ─── Navigation ────────────────────────────────── */
+        .site-nav { display: flex; align-items: center; gap: 4px; flex: 1; }
+        .nav-link {
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--ink-light);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            transition: color 0.15s, background 0.15s;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+        .nav-link:hover { color: var(--ink); background: var(--cream); }
+        .nav-link.active { color: var(--maroon); background: var(--maroon-pale); }
+
+        /* ─── Header Actions ────────────────────────────── */
+        .header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+        .avatar-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px 4px 4px;
+            border: 1px solid var(--cream-border);
+            border-radius: 99px;
+            text-decoration: none;
+            transition: all 0.15s;
+            cursor: pointer;
+            background: var(--white);
+        }
+        .avatar-chip:hover { border-color: #B8B0A0; background: var(--cream); }
+        .avatar-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--gold-pale);
+            color: var(--gold);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.03em;
+            flex-shrink: 0;
+        }
+        .avatar-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink);
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ─── Buttons ────────────────────────────────────── */
+        .btn {
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            padding: 7px 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+            letter-spacing: 0.01em;
+            line-height: 1;
+        }
+        .btn-primary { color: var(--white); background: var(--maroon); border-color: var(--maroon); }
+        .btn-primary:hover { background: var(--maroon-deep); border-color: var(--maroon-deep); }
+        .btn-ghost { color: var(--ink-light); background: transparent; border-color: var(--cream-border); }
+        .btn-ghost:hover { color: var(--ink); border-color: #B8B0A0; background: var(--cream); }
+        .btn-danger { color: var(--white); background: #B83232; border-color: #B83232; }
+        .btn-danger:hover { background: #961F1F; border-color: #961F1F; }
+        .btn-sm { font-size: 12px; padding: 5px 12px; }
+
+        /* ─── Flash Messages ────────────────────────────── */
+        .flash-bar { padding: 11px 32px; text-align: center; font-size: 13.5px; font-weight: 500; }
+        .flash-bar.success { background: var(--green-pale); color: var(--green); border-bottom: 1px solid rgba(30,107,69,0.15); }
+        .flash-bar.error   { background: var(--red-pale);   color: #B83232; border-bottom: 1px solid rgba(184,50,50,0.15); }
+        .flash-bar.info    { background: var(--maroon-pale); color: var(--maroon); border-bottom: 1px solid rgba(122,29,46,0.15); }
+
+        /* ─── Page Layout ───────────────────────────────── */
+        .page-content { min-height: calc(100vh - 68px); }
+        .page-wrap { max-width: 1160px; margin: 0 auto; padding: 40px 32px; }
+
+        /* ─── Page Header ───────────────────────────────── */
+        .page-header { margin-bottom: 32px; }
+        .page-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+        .page-title { font-family: var(--font-display); font-size: 28px; font-weight: 600; color: var(--ink); line-height: 1.2; margin-bottom: 6px; }
+        .page-subtitle { font-size: 14px; color: var(--ink-light); }
+
+        /* ─── Cards ─────────────────────────────────────── */
+        .card { background: var(--white); border: 1px solid var(--cream-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; }
+        .card-pad { padding: 24px; }
+        .card-header { padding: 18px 24px; border-bottom: 1px solid var(--cream-border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .card-title { font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--ink); }
+
+        /* ─── Tables ─────────────────────────────────────── */
+        .table-wrap { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .data-table thead th { background: var(--cream); color: var(--ink-light); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--cream-border); white-space: nowrap; }
+        .data-table tbody tr { border-bottom: 1px solid var(--cream-dark); transition: background 0.1s; }
+        .data-table tbody tr:last-child { border-bottom: none; }
+        .data-table tbody tr:hover { background: #FAFAF7; }
+        .data-table td { padding: 13px 16px; color: var(--ink); vertical-align: middle; }
+
+        /* ─── Badges ─────────────────────────────────────── */
+        .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+        .badge-green  { background: var(--green-pale); color: var(--green); }
+        .badge-maroon { background: var(--maroon-pale); color: var(--maroon); }
+        .badge-gold   { background: var(--gold-pale); color: var(--gold); }
+        .badge-grey   { background: var(--cream-dark); color: var(--ink-light); }
+        .badge-red    { background: var(--red-pale); color: #B83232; }
+
+        /* ─── Forms ──────────────────────────────────────── */
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-light); margin-bottom: 6px; letter-spacing: 0.03em; }
+        .form-input { width: 100%; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--white); border: 1px solid var(--cream-border); border-radius: var(--radius-sm); padding: 9px 12px; transition: border-color 0.15s, box-shadow 0.15s; outline: none; }
+        .form-input:focus { border-color: var(--maroon); box-shadow: 0 0 0 3px rgba(122,29,46,0.08); }
+        select.form-input { cursor: pointer; }
+
+        /* ─── Empty State ────────────────────────────────── */
+        .empty-state { text-align: center; padding: 64px 24px; color: var(--ink-faint); }
+        .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+        .empty-state-title { font-size: 15px; font-weight: 600; color: var(--ink-light); margin-bottom: 6px; }
+        .empty-state-text { font-size: 13px; }
+
+        /* ─── Stat Chips ─────────────────────────────────── */
+        .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+        .stat-chip { background: var(--white); border: 1px solid var(--cream-border); border-radius: var(--radius-md); padding: 14px 20px; min-width: 120px; flex: 1; box-shadow: var(--shadow-soft); }
+        .stat-chip-value { font-family: var(--font-display); font-size: 26px; font-weight: 600; color: var(--ink); line-height: 1; margin-bottom: 4px; }
+        .stat-chip-label { font-size: 11.5px; font-weight: 500; color: var(--ink-faint); letter-spacing: 0.04em; text-transform: uppercase; }
+
+        /* ─── Responsive ─────────────────────────────────── */
+        @media (max-width: 768px) {
+            .header-inner  { padding: 0 20px; gap: 16px; }
+            .brand-sub     { display: none; }
+            .header-divider { display: none; }
+            .site-nav .nav-link:not(.active) { display: none; }
+            .page-wrap     { padding: 24px 20px; }
+            .stat-row      { gap: 8px; }
+            .stat-chip     { min-width: 100px; padding: 12px 14px; }
+            .avatar-name   { display: none; }
+        }
+    </style>
+
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+
+<header class="site-header">
+    <div class="header-inner">
+
+        <a href="{{ url_for('guest.dashboard') }}" class="brand">
+            <img src="{{ url_for('static', filename='icons/Logo-Grade.png') }}"
+                 alt="CSL Logo" class="brand-logo">
+            <div class="brand-text">
+                <span class="brand-name">CSL Library</span>
+            </div>
+        </a>
+
+        <div class="header-divider"></div>
+
+        <nav class="site-nav">
+            <a href="{{ url_for('guest.dashboard') }}"
+               class="nav-link {% block nav_dashboard %}{% endblock %}">Browse</a>
+        </nav>
+
+        <div class="header-actions">
+            <a href="{{ url_for('guest.account') }}"
+               class="avatar-chip {% block nav_account %}{% endblock %}">
+                <div class="avatar-circle">
+                    {% if g.current_user and g.current_user.get('guest_name') %}
+                        {{ g.current_user['guest_name'][:2].upper() }}
+                    {% else %}
+                        GU
+                    {% endif %}
+                </div>
+                <span class="avatar-name">
+                    {% if g.current_user and g.current_user.get('guest_name') %}
+                        {{ g.current_user['guest_name'].split()[0] }}
+                    {% else %}
+                        Guest
+                    {% endif %}
+                </span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost">Sign Out</a>
+        </div>
+
+    </div>
+</header>
+
+{# ── Guest identity strip ───────────────────────────────────── #}
+<div class="guest-strip">
+    You are browsing as a <strong>Guest</strong>
+    {% if g.current_user and g.current_user.get('sponsor_code') %}
+        — sponsored by employee <strong>{{ g.current_user['sponsor_code'] }}</strong>
+    {% endif %}
+    &nbsp;·&nbsp; Guest sessions expire after 24 hours.
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="flash-bar {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<main class="page-content">
+    <div class="page-wrap">
+        {% block content %}{% endblock %}
+    </div>
+</main>
+
+</body>
+</html>

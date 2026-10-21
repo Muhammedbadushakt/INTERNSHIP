@@ -1,0 +1,164 @@
+{% extends "admin/base.html" %}
+{% block title %}Export Books | Admin{% endblock %}
+{% block nav_export_books %}active{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .format-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 4px;
+    }
+
+    .format-input { display: none; }
+
+    .format-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 16px 12px;
+        border: 1.5px solid var(--cream-border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        background: var(--white);
+        transition: all 0.15s;
+        text-align: center;
+    }
+
+    .format-label:hover { border-color: var(--maroon); background: var(--maroon-pale); }
+
+    .format-input:checked + .format-label {
+        border-color: var(--maroon);
+        background: var(--maroon-pale);
+        color: var(--maroon);
+    }
+
+    .format-icon { font-size: 22px; }
+
+    .format-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-light);
+    }
+
+    .format-input:checked + .format-label .format-name { color: var(--maroon); }
+
+    .format-desc { font-size: 11px; color: var(--ink-faint); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">Books</div>
+    <h1 class="page-title">Export Books</h1>
+    <p class="page-subtitle">Download the catalogue as Excel, CSV, or PDF.</p>
+</div>
+
+{% if error %}<div class="alert alert-error"><span class="alert-icon">⚠</span><div>{{ error }}</div></div>{% endif %}
+
+<form method="POST" action="{{ url_for('admin.export_books') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
+
+        <!-- Format -->
+        <div class="card">
+            <div class="card-header"><span class="card-title">Export Format</span></div>
+            <div class="card-body">
+                <div class="format-grid">
+                    <input type="radio" name="format" id="fmt-excel" value="excel" class="format-input" checked>
+                    <label for="fmt-excel" class="format-label">
+                        <span class="format-icon">📊</span>
+                        <span class="format-name">Excel</span>
+                        <span class="format-desc">.xlsx with styling</span>
+                    </label>
+
+                    <input type="radio" name="format" id="fmt-csv" value="csv" class="format-input">
+                    <label for="fmt-csv" class="format-label">
+                        <span class="format-icon">📄</span>
+                        <span class="format-name">CSV</span>
+                        <span class="format-desc">Plain text, any app</span>
+                    </label>
+
+                    <input type="radio" name="format" id="fmt-pdf" value="pdf" class="format-input">
+                    <label for="fmt-pdf" class="format-label">
+                        <span class="format-icon">🖨</span>
+                        <span class="format-name">PDF</span>
+                        <span class="format-desc">Print-ready table</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="card">
+            <div class="card-header"><span class="card-title">Filter (optional)</span></div>
+            <div class="card-body">
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label class="form-label">Filter By</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="filter_type" id="filter-type" onchange="toggleFilter()">
+                            <option value="">All books</option>
+                            <option value="main">Main Category</option>
+                            <option value="subject">Subject</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="filter-main-wrap" class="form-group" style="display:none;">
+                    <label class="form-label">Main Category</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="filter_id" id="filter-main">
+                            {% for m in mains %}
+                            <option value="{{ m.id }}">{{ m.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div id="filter-subject-wrap" class="form-group" style="display:none;">
+                    <label class="form-label">Subject</label>
+                    <div class="select-wrap">
+                        <select class="form-select" name="filter_id" id="filter-subject">
+                            {% for s in subjects %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div id="filter-all-note" style="font-size:13px; color:var(--ink-faint);">
+                    Export will include all books.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+        <a href="{{ url_for('admin.books') }}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg">↓ &nbsp;Download Export</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleFilter() {
+        const type = document.getElementById('filter-type').value;
+        document.getElementById('filter-main-wrap').style.display    = (type === 'main')    ? 'flex' : 'none';
+        document.getElementById('filter-subject-wrap').style.display = (type === 'subject') ? 'flex' : 'none';
+        document.getElementById('filter-all-note').style.display     = (!type)              ? 'block' : 'none';
+
+        // disable the hidden selects so they don't submit
+        document.getElementById('filter-main').disabled    = (type !== 'main');
+        document.getElementById('filter-subject').disabled = (type !== 'subject');
+    }
+
+    // Init
+    document.getElementById('filter-main').disabled    = true;
+    document.getElementById('filter-subject').disabled = true;
+</script>
+{% endblock %}

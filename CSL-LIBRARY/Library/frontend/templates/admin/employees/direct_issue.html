@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+{% block title %}Direct Issue | Admin{% endblock %}
+{% block nav_direct_issue %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">Direct Issue</div>
+    <h1 class="page-title">Issue Book by Admin</h1>
+    <p class="page-subtitle">Manually issue a book to a person without going through the request flow.</p>
+</div>
+
+{% if msg %}
+    {% if 'successfully' in msg.lower() %}
+    <div class="alert alert-success"><span class="alert-icon">✓</span><div>{{ msg }}</div></div>
+    {% else %}
+    <div class="alert alert-error"><span class="alert-icon">⚠</span><div>{{ msg }}</div></div>
+    {% endif %}
+{% endif %}
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; max-width:760px;">
+
+    {# ── Issue Form Card ── #}
+    <div class="card" style="grid-column:1 / -1;">
+        <div class="card-header"><span class="card-title">Issue Details</span></div>
+        <form method="POST" action="{{ url_for('admin.direct_issue') }}" onsubmit="return confirm('Are You Sure To Issue The Book ? Warning These Method Cannot be Undone Later')">
+            <div class="card-body" style="display:flex; flex-direction:column; gap:14px;">
+
+                <div class="form-group full-width" style="margin-bottom:0;">
+                    <label class="form-label">Person's Name <span style="color:var(--maroon);">*</span></label>
+                    <input class="form-input" type="text" name="name"
+                           placeholder="e.g. Arjun Mehta" required>
+                </div>
+
+                <div class="form-group full-width" style="margin-bottom:0;">
+                    <label class="form-label">Book Code <span style="color:var(--maroon);">*</span></label>
+                    <input class="form-input" type="text" name="book_id"
+                           placeholder="e.g. TXT-NAV-001-c.1"
+                           style="text-transform:uppercase; font-family:'Courier New',monospace;"
+                           oninput="this.value=this.value.toUpperCase()"
+                           required>
+                    <div class="form-hint">Must match an existing book copy code exactly.</div>
+                </div>
+
+                <div class="form-group full-width" style="margin-bottom:0;">
+                    <label class="form-label">Expected Return Date <span style="color:var(--maroon);">*</span></label>
+                    <input class="form-input" type="date" name="expected_date" id="expected_date_input" required>
+                </div>
+
+                <div class="form-group full-width" style="margin-bottom:0;">
+                    <label class="form-label">Remarks <span style="color:var(--ink-faint); font-size:0.8em;">(optional)</span></label>
+                    <textarea class="form-input" name="remarks" rows="3"
+                              placeholder="e.g. Reference only, handle with care…"
+                              style="resize:vertical;"></textarea>
+                </div>
+
+            </div>
+            <div class="card-footer" style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">📤 Issue Book</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const dateInput = document.getElementById('expected_date_input');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+</script>
+{% endblock %}

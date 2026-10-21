@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% block title %}Super Admin — Role Management{% endblock %}
+
+{% block extra_styles %}
+<style>
+  /* ── Page shell ── */
+  .sa-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 32px;
+  }
+
+  .sa-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .sa-page-title {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: .3rem;
+  }
+
+  .sa-page-sub {
+    font-size: .84rem;
+    color: var(--ink-faint);
+  }
+
+  .sa-logout {
+    font-family: var(--font-body);
+    font-size: .8rem;
+    font-weight: 500;
+    color: var(--ink-light);
+    text-decoration: none;
+    padding: .4rem .9rem;
+    border: 1px solid var(--cream-border);
+    border-radius: var(--radius-sm);
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+    align-self: flex-start;
+  }
+  .sa-logout:hover { color: #c0392b; border-color: #c0392b; }
+
+  /* ── Flash ── */
+  .sa-flash {
+    font-size: .83rem;
+    border-radius: var(--radius-sm);
+    padding: .65rem .9rem;
+    margin-bottom: 1.1rem;
+    border-left: 3px solid;
+  }
+  .sa-flash.error   { background: #fdf1f0; border-color: #c0392b; color: #c0392b; }
+  .sa-flash.success { background: #f0faf3; border-color: #27ae60; color: #27ae60; }
+  .sa-flash.info    { background: var(--maroon-pale); border-color: var(--maroon); color: var(--maroon); }
+
+  /* ── Stat strip ── */
+  .sa-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .sa-stat {
+    background: var(--white);
+    border: 1px solid var(--cream-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .sa-stat-label {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: .3rem;
+  }
+
+  .sa-stat-value {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .sa-stat-value.maroon { color: var(--maroon); }
+  .sa-stat-value.gold   { color: var(--gold);   }
+  .sa-stat-value.green  { color: #1e7e34;       }
+  .sa-stat-value.muted  { color: var(--ink-faint); }
+
+  /* ── Toolbar ── */
+  .sa-toolbar {
+    display: flex;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .sa-search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .sa-search-wrap svg {
+    position: absolute;
+    left: .7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    fill: var(--ink-faint);
+    pointer-events: none;
+  }
+
+  .sa-search {
+    width: 100%;
+    padding: .55rem .85rem .55rem 2rem;
+    border: 1px solid var(--cream-border);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: .88rem;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .sa-search:focus { border-color: var(--maroon); }
+
+  .sa-filter {
+    padding: .55rem .75rem;
+    border: 1px solid var(--cream-border);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: .88rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ── Table ── */
+  .sa-table-wrap {
+    background: var(--white);
+    border: 1px solid var(--cream-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+  }
+
+  thead {
+    background: var(--cream-dark);
+    border-bottom: 1px solid var(--cream-border);
+  }
+
+  th {
+    text-align: left;
+    padding: .7rem 1rem;
+    font-family: var(--font-body);
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--cream-border);
+    transition: background .12s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover      { background: var(--cream); }
+
+  td {
+    padding: .8rem 1rem;
+    vertical-align: middle;
+    color: var(--ink);
+  }
+
+  .emp-name { font-weight: 500; }
+  .emp-code {
+    font-size: .75rem;
+    color: var(--ink-faint);
+    font-family: monospace;
+    margin-top: 2px;
+  }
+  .emp-meta { font-size: .82rem; color: var(--ink-light); }
+
+  /* status pills */
+  .pill {
+    display: inline-block;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: .22rem .55rem;
+    border-radius: 20px;
+  }
+  .pill-active   { background: #eaf7ee; color: #1e7e34; }
+  .pill-inactive { background: var(--cream-dark); color: var(--ink-faint); }
+  .pill-admin    { background: var(--maroon-pale); color: var(--maroon); }
+  .pill-employee { background: var(--gold-pale);   color: #7a5a1a; }
+
+  /* action buttons */
+  .btn-assign, .btn-revoke, .btn-activate, .btn-deactivate {
+    font-family: var(--font-body);
+    font-size: .78rem;
+    font-weight: 600;
+    padding: .38rem .9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+
+  .btn-assign {
+    background: #f0faf3;
+    color: #1e7e34;
+    border-color: rgba(30,126,52,.25);
+  }
+  .btn-assign:hover { background: #d8f3e0; }
+
+  .btn-revoke {
+    background: #fdf1f0;
+    color: #c0392b;
+    border-color: rgba(192,57,43,.25);
+  }
+  .btn-revoke:hover { background: #fadddb; }
+
+  .btn-activate {
+    background: #f0faf3;
+    color: #1e7e34;
+    border-color: rgba(30,126,52,.25);
+  }
+  .btn-activate:hover { background: #d8f3e0; }
+
+  .btn-deactivate {
+    background: #fdf6ec;
+    color: #9a5f10;
+    border-color: rgba(154,95,16,.25);
+  }
+  .btn-deactivate:hover { background: #fce9cc; }
+
+  /* actions cell — stack the two forms neatly */
+  .td-actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .empty-row td {
+    text-align: center;
+    padding: 3rem;
+    color: var(--ink-faint);
+    font-size: .9rem;
+  }
+
+  @media (max-width: 900px) {
+    .sa-page  { padding: 1.5rem 20px; }
+    .sa-stats { grid-template-columns: 1fr 1fr; }
+    .col-dept, .col-desig { display: none; }
+  }
+  @media (max-width: 600px) {
+    .sa-stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block header_actions %}
+  <a href="{{ url_for('super_admin.logout') }}" class="btn-ghost">Sign Out</a>
+{% endblock %}
+
+{% block content %}
+<div class="sa-page">
+
+  <div class="sa-topbar">
+    <div>
+      <h1 class="sa-page-title">Role &amp; Account Management</h1>
+      <p class="sa-page-sub">Assign or revoke the <strong>Admin</strong> role, and activate or deactivate employee accounts.</p>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="sa-flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- Stats -->
+  {% set active_count = employees | selectattr('status', 'equalto', 'ACTIVE') | list | length %}
+  <div class="sa-stats">
+    <div class="sa-stat">
+      <div class="sa-stat-label">Total Employees</div>
+      <div class="sa-stat-value">{{ employees | length }}</div>
+    </div>
+    <div class="sa-stat">
+      <div class="sa-stat-label">Active</div>
+      <div class="sa-stat-value green">{{ active_count }}</div>
+    </div>
+    <div class="sa-stat">
+      <div class="sa-stat-label">Admins</div>
+      <div class="sa-stat-value maroon">{{ admin_codes | length }}</div>
+    </div>
+    <div class="sa-stat">
+      <div class="sa-stat-label">Inactive</div>
+      <div class="sa-stat-value muted">{{ employees | length - active_count }}</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="sa-toolbar">
+    <div class="sa-search-wrap">
+      <svg viewBox="0 0 24 24">
+        <path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
+              stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <input class="sa-search" id="saSearch" type="text"
+             placeholder="Search name, code or department…"
+             oninput="saFilter()"/>
+    </div>
+    <select class="sa-filter" id="saRoleFilter" onchange="saFilter()">
+      <option value="all">All roles</option>
+      <option value="admin">Admin only</option>
+      <option value="nonadmin">Non-admin only</option>
+    </select>
+    <select class="sa-filter" id="saStatusFilter" onchange="saFilter()">
+      <option value="all">All statuses</option>
+      <option value="active">Active only</option>
+      <option value="inactive">Inactive only</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="sa-table-wrap">
+    <table id="saTable">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th class="col-dept">Department</th>
+          <th class="col-desig">Designation</th>
+          <th>Status</th>
+          <th>Role</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+        <tr data-name="{{ emp.name | lower }}"
+            data-code="{{ emp.employee_code | lower }}"
+            data-dept="{{ (emp.department or '') | lower }}"
+            data-role="{{ 'admin' if emp.employee_code in admin_codes else 'nonadmin' }}"
+            data-status="{{ 'active' if emp.status == 'ACTIVE' else 'inactive' }}">
+
+          <td>
+            <div class="emp-name">{{ emp.name }}</div>
+            <div class="emp-code">{{ emp.employee_code }}</div>
+          </td>
+
+          <td class="emp-meta col-dept">{{ emp.department or '—' }}</td>
+          <td class="emp-meta col-desig">{{ emp.designation or '—' }}</td>
+
+          <td>
+            <span class="pill {% if emp.status == 'ACTIVE' %}pill-active{% else %}pill-inactive{% endif %}">
+              {{ emp.status }}
+            </span>
+          </td>
+
+          <td>
+            {% if emp.employee_code in admin_codes %}
+              <span class="pill pill-admin">Admin</span>
+            {% else %}
+              <span class="pill pill-employee">Employee</span>
+            {% endif %}
+          </td>
+
+          <td>
+            <div class="td-actions">
+              <!-- Role toggle -->
+              {% if emp.employee_code in admin_codes %}
+                <form method="POST" action="{{ url_for('super_admin.revoke_admin') }}"
+                      onsubmit="return confirm('Remove admin role from {{ emp.name }}?')">
+                  <input type="hidden" name="employee_code" value="{{ emp.employee_code }}"/>
+                  <button type="submit" class="btn-revoke">Revoke Admin</button>
+                </form>
+              {% else %}
+                <form method="POST" action="{{ url_for('super_admin.assign_admin') }}">
+                  <input type="hidden" name="employee_code" value="{{ emp.employee_code }}"/>
+                  <button type="submit" class="btn-assign">Assign Admin</button>
+                </form>
+              {% endif %}
+
+              <!-- Status toggle -->
+              {% if emp.status == 'ACTIVE' %}
+                <form method="POST" action="{{ url_for('super_admin.deactivate_employee') }}"
+                      onsubmit="return confirm('Deactivate account for {{ emp.name }}?')">
+                  <input type="hidden" name="employee_code" value="{{ emp.employee_code }}"/>
+                  <button type="submit" class="btn-deactivate">Deactivate</button>
+                </form>
+              {% else %}
+                <form method="POST" action="{{ url_for('super_admin.activate_employee') }}">
+                  <input type="hidden" name="employee_code" value="{{ emp.employee_code }}"/>
+                  <button type="submit" class="btn-activate">Activate</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+
+        </tr>
+        {% else %}
+        <tr class="empty-row"><td colspan="6">No employees found in the database.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  function saFilter() {
+    const q      = document.getElementById('saSearch').value.toLowerCase();
+    const role   = document.getElementById('saRoleFilter').value;
+    const status = document.getElementById('saStatusFilter').value;
+
+    document.querySelectorAll('#saTable tbody tr:not(.empty-row)').forEach(row => {
+      const text     = row.dataset.name + ' ' + row.dataset.code + ' ' + row.dataset.dept;
+      const matchQ   = text.includes(q);
+      const matchR   = role   === 'all' || row.dataset.role   === role;
+      const matchS   = status === 'all' || row.dataset.status === status;
+      row.style.display = (matchQ && matchR && matchS) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

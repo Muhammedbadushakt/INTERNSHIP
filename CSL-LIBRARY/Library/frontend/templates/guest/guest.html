@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Access | CSL Library</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --cream:        #F7F5F0;
+            --cream-dark:   #EDE9E0;
+            --cream-border: #D9D4C8;
+            --ink:          #1A1814;
+            --ink-light:    #6B6560;
+            --ink-faint:    #A89F95;
+            --maroon:       #7A1D2E;
+            --maroon-deep:  #5C1522;
+            --maroon-pale:  #F5ECEE;
+            --gold:         #C8943A;
+            --gold-pale:    #FBF4E8;
+            --white:        #FFFFFF;
+            --green:        #1E6B45;
+            --green-pale:   #EAF4EE;
+            --red-pale:     #FDEEEE;
+            --shadow-card:  0 2px 8px rgba(26,24,20,0.08), 0 8px 32px rgba(26,24,20,0.05);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --font-display: 'Lora', Georgia, serif;
+            --font-body:    'DM Sans', system-ui, sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; }
+        body {
+            font-family: var(--font-body);
+            background: var(--cream);
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* ─── Logo top ───────────────────────────────────── */
+        .auth-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            text-decoration: none;
+        }
+        .auth-brand img { width: 44px; height: 44px; object-fit: contain; }
+        .auth-brand-text { line-height: 1.15; }
+        .auth-brand-name { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--maroon); display: block; }
+        .auth-brand-sub  { font-size: 11px; font-weight: 500; color: var(--ink-faint); letter-spacing: 0.12em; text-transform: uppercase; display: block; }
+
+        /* ─── Card ───────────────────────────────────────── */
+        .auth-card {
+            background: var(--white);
+            border: 1px solid var(--cream-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+        }
+
+        .auth-card-header {
+            padding: 28px 32px 20px;
+            border-bottom: 1px solid var(--cream-border);
+            background: var(--gold-pale);
+        }
+        .guest-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gold);
+            background: rgba(200,148,58,0.12);
+            border: 1px solid rgba(200,148,58,0.25);
+            border-radius: 99px;
+            padding: 3px 10px;
+            margin-bottom: 10px;
+        }
+        .auth-card-title { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+        .auth-card-subtitle { font-size: 13px; color: var(--ink-light); line-height: 1.5; }
+
+        .auth-card-body { padding: 28px 32px; }
+
+        /* ─── Error ──────────────────────────────────────── */
+        .error-box {
+            background: var(--red-pale);
+            border: 1px solid rgba(184,50,50,0.2);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #B83232;
+            margin-bottom: 20px;
+        }
+
+        /* ─── Form ───────────────────────────────────────── */
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-light); margin-bottom: 6px; letter-spacing: 0.03em; }
+        .form-label span { color: var(--maroon); margin-left: 2px; }
+        .form-input {
+            width: 100%;
+            font-family: var(--font-body);
+            font-size: 14px;
+            color: var(--ink);
+            background: var(--cream);
+            border: 1px solid var(--cream-border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+            outline: none;
+        }
+        .form-input:focus { border-color: var(--maroon); background: var(--white); box-shadow: 0 0 0 3px rgba(122,29,46,0.08); }
+        .form-hint { font-size: 11.5px; color: var(--ink-faint); margin-top: 5px; line-height: 1.4; }
+
+        /* ─── Divider ────────────────────────────────────── */
+        .form-divider {
+            border: none;
+            border-top: 1px solid var(--cream-border);
+            margin: 22px 0;
+        }
+        .form-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 14px;
+        }
+
+        /* ─── Submit ─────────────────────────────────────── */
+        .btn-submit {
+            width: 100%;
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--white);
+            background: var(--maroon);
+            border: 1px solid var(--maroon);
+            border-radius: var(--radius-sm);
+            padding: 11px 20px;
+            cursor: pointer;
+            transition: all 0.15s;
+            letter-spacing: 0.02em;
+            margin-top: 4px;
+        }
+        .btn-submit:hover { background: var(--maroon-deep); border-color: var(--maroon-deep); }
+
+        /* ─── Footer note ────────────────────────────────── */
+        .auth-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12.5px;
+            color: var(--ink-faint);
+        }
+        .auth-footer a { color: var(--maroon); text-decoration: none; font-weight: 500; }
+        .auth-footer a:hover { text-decoration: underline; }
+
+        /* ─── Info box ───────────────────────────────────── */
+        .info-box {
+            background: var(--gold-pale);
+            border: 1px solid rgba(200,148,58,0.22);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 12.5px;
+            color: #8A6018;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card-header, .auth-card-body { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="{{ url_for('auth.login') }}" class="auth-brand">
+        <img src="{{ url_for('static', filename='icons/Logo-Grade.png') }}" alt="CSL Logo">
+        <div class="auth-brand-text">
+            <span class="auth-brand-name">CSL Library</span>
+        </div>
+    </a>
+
+    <div class="auth-card">
+
+        <div class="auth-card-header">
+            <div class="guest-tag">🎫 Guest Access</div>
+            <div class="auth-card-title">Continue as Guest</div>
+            <div class="auth-card-subtitle">You'll need a Hosting Employee Username to proceed.</div>
+        </div>
+
+        <div class="auth-card-body">
+
+            {% if error %}
+            <div class="error-box">{{ error }}</div>
+            {% endif %}
+
+            <div class="info-box">
+                A CSL employee must refer your access. Ask them for their username before filling this form.
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.guest') }}">
+
+                <div class="form-section-label">Your details</div>
+
+                <div class="form-group">
+                    <label class="form-label" for="guest_name">Full Name <span>*</span></label>
+                    <input class="form-input" type="text" id="guest_name" name="guest_name"
+                           placeholder="e.g. Arjun Mehta"
+                           value="{{ request.form.get('guest_name', '') }}"
+                           autocomplete="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="contact_number">Contact Number <span>*</span></label>
+                    <input class="form-input" type="tel" id="contact_number" name="contact_number"
+                           placeholder="e.g. 9876543210"
+                           value="{{ request.form.get('contact_number', '') }}"
+                           autocomplete="tel" required>
+                </div>
+
+                <hr class="form-divider">
+
+                <div class="form-section-label">Employee details</div>
+
+                <div class="form-group">
+                    <label class="form-label" for="sponsor_employee_code">Hosting Employee Username <span>*</span></label>
+                    <input class="form-input" type="text" id="sponsor_employee_code" name="sponsor_employee_code"
+                           placeholder="e.g. EMP-042"
+                           value="{{ request.form.get('sponsor_employee_code', '') }}"
+                           autocomplete="off" required>
+                    <div class="form-hint">The Hosting Employee  must have an active CSL Library account.</div>
+                </div>
+
+                <button type="submit" class="btn-submit">Enter as Guest →</button>
+            </form>
+
+        </div>
+    </div>
+
+    <div class="auth-footer">
+        Are you a registered employee? <a href="{{ url_for('auth.login') }}">Sign in here</a>
+    </div>
+
+</body>
+</html>

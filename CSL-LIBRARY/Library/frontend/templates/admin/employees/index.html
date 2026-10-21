@@ -1,0 +1,138 @@
+{% extends "admin/base.html" %}
+{% block title %}Employees | Admin{% endblock %}
+{% block nav_employees %}active{% endblock %}
+
+{% block content %}
+<div class="page-header-row page-header">
+    <div>
+        <div class="page-eyebrow">People</div>
+        <h1 class="page-title">Employees & Guests</h1>
+    </div>
+    <div style="display:flex; gap:8px;">
+        <a href="{{ url_for('admin.manage_employee') }}" class="btn btn-primary">＋ Add Employee</a>
+        <a href="{{ url_for('admin.export_employees') }}" class="btn btn-ghost">↓ Export</a>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+    <a href="{{ url_for('admin.employees', tab='employees', search=search, search_by=search_by) }}"
+       class="tab-link {% if tab == 'employees' %}active{% endif %}">
+        Employees
+        <span class="badge badge-grey" style="margin-left:6px;">{{ employee_data|length }}</span>
+    </a>
+    <a href="{{ url_for('admin.employees', tab='guests', search=search, search_by=search_by) }}"
+       class="tab-link {% if tab == 'guests' %}active{% endif %}">
+        Guests
+        <span class="badge badge-grey" style="margin-left:6px;">{{ guest_data|length }}</span>
+    </a>
+</div>
+
+<!-- Search bar -->
+<form method="GET" action="{{ url_for('admin.employees') }}" style="margin-bottom:20px;">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <div class="search-bar">
+        <div class="search-input-wrap" style="flex:1; min-width:200px;">
+            <span class="search-icon">⌕</span>
+            <input class="form-input" type="text" name="search" value="{{ search }}" placeholder="Search…">
+        </div>
+        <div class="select-wrap" style="min-width:140px;">
+            <select class="form-select" name="search_by">
+                <option value="name" {% if search_by=='name' %}selected{% endif %}>By Name</option>
+                <option value="code" {% if search_by=='code' %}selected{% endif %}>By Code</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="{{ url_for('admin.employees', tab=tab) }}" class="btn btn-ghost">Clear</a>
+    </div>
+</form>
+
+{% if tab == 'employees' %}
+<!-- ── Employees table ── -->
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr>
+                <th>Status</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Contact</th>
+                <th></th>
+            </tr></thead>
+            <tbody>
+            {% for ed in employee_data %}
+            {% set e = ed.employee %}
+            <tr>
+                <td>
+                    <span class="dot dot-{{ ed.indicator }}" title="
+                        {%- if ed.indicator == 'green' %}No active borrows
+                        {%- elif ed.indicator == 'orange' %}Active borrow
+                        {%- else %}Overdue return{% endif %}"></span>
+                </td>
+                <td style="font-family:'Courier New',monospace; font-size:13px; font-weight:600; color:var(--maroon);">{{ e.employee_code }}</td>
+                <td style="font-weight:600;">{{ e.name }}</td>
+                <td style="color:var(--ink-light);">{{ e.department or '—' }}</td>
+                <td style="color:var(--ink-light);">{{ e.designation or '—' }}</td>
+                <td style="color:var(--ink-light);">{{ e.contact_number or '—' }}</td>
+                <td>
+                    <a href="{{ url_for('admin.employee_detail', employee_code=e.employee_code) }}"
+                       class="btn btn-ghost btn-sm">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center; color:var(--ink-faint); padding:32px;">No employees found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Legend -->
+<div style="margin-top:12px; display:flex; gap:16px; flex-wrap:wrap;">
+    <span style="font-size:12px; color:var(--ink-faint); display:flex; align-items:center; gap:6px;"><span class="dot dot-green"></span> No borrows</span>
+    <span style="font-size:12px; color:var(--ink-faint); display:flex; align-items:center; gap:6px;"><span class="dot dot-orange"></span> Active borrow</span>
+    <span style="font-size:12px; color:var(--ink-faint); display:flex; align-items:center; gap:6px;"><span class="dot dot-red"></span> Overdue</span>
+</div>
+
+{% else %}
+<!-- ── Guests table ── -->
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr>
+                <th>Status</th>
+                <th>Guest Name</th>
+                <th>Sponsor Code</th>
+                <th>Contact</th>
+                <th>Registered</th>
+                <th></th>
+            </tr></thead>
+            <tbody>
+            {% for gd in guest_data %}
+            {% set g = gd.guest %}
+            <tr>
+                <td>
+                    <span class="dot dot-{{ gd.indicator }}"></span>
+                </td>
+                <td style="font-weight:600;">{{ g.name }}</td>
+                <td style="font-family:'Courier New',monospace; font-size:13px; color:var(--maroon);">{{ g.employee_code or '—' }}</td>
+                <td style="color:var(--ink-light);">{{ g.contact_number or '—' }}</td>
+                <td style="color:var(--ink-faint); font-size:12px;">
+                    {% if g.created_at %}{{ g.created_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('admin.guest_detail', guest_id=g.id) }}"
+                       class="btn btn-ghost btn-sm">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" style="text-align:center; color:var(--ink-faint); padding:32px;">No guests found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

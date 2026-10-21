@@ -1,0 +1,86 @@
+{% extends "admin/base.html" %}
+{% block title %}New Account Requests | Admin{% endblock %}
+{% block nav_emp_approval %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-eyebrow">Approvals</div>
+    <h1 class="page-title">New Account Requests</h1>
+    <p class="page-subtitle">
+        {% if pending %}{{ pending|length }} pending account{{ 's' if pending|length != 1 }}{% else %}No pending accounts{% endif %}
+    </p>
+</div>
+
+{% if pending %}
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Requested</th>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Contact</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for e in pending %}
+                <tr>
+                    <td style="font-size:12px; color:var(--ink-light); white-space:nowrap;">
+                        {% if e.created_at %}{{ e.created_at.strftime('%d %b %Y') }}{% else %}&mdash;{% endif %}
+                    </td>
+                    <td>
+                        <div style="font-weight:600; font-size:13.5px;">
+                            {% if e.name %}{{ e.name }}{% else %}&mdash;{% endif %}
+                        </div>
+                        <div style="font-size:11.5px; font-family:'Courier New',monospace; color:var(--ink-faint);">
+                            {% if e.employee_code %}{{ e.employee_code }}{% else %}&mdash;{% endif %}
+                        </div>
+                    </td>
+                    <td style="font-size:13px;">
+                        {% if e.department %}{{ e.department }}{% else %}&mdash;{% endif %}
+                    </td>
+                    <td style="font-size:13px;">
+                        {% if e.designation %}{{ e.designation }}{% else %}&mdash;{% endif %}
+                    </td>
+                    <td>
+                        <div style="font-size:12.5px; color:var(--ink);">
+                            {% if e.contact_number %}{{ e.contact_number }}{% else %}&mdash;{% endif %}
+                        </div>
+                        <div style="font-size:11.5px; color:var(--ink-faint); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            {{ e.gmail_id or '' }}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-gold">Pending</span>
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <form method="POST" action="{{ url_for('admin.activate_employee', employee_code=e.employee_code) }}" style="display:inline;" onsubmit="return confirm('Approve these Employee As the Library Member?')">
+                                <button type="submit" class="btn btn-primary btn-sm">&#10003; Activate</button>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token}}">
+                            </form>
+                            <form method="POST" action="{{ url_for('admin.reject_employee_registration', employee_code=e.employee_code) }}" style="display:inline;"
+                                  onsubmit="return confirm('Reject and delete this account request?');">
+                                <button type="submit" class="btn btn-danger btn-sm">&#10005; Reject</button>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div style="text-align:center; padding:64px 24px; color:var(--ink-faint);">
+    <div style="font-size:40px; margin-bottom:12px;">&#10003;</div>
+    <div style="font-size:15px; font-weight:600; color:var(--ink-light); margin-bottom:6px;">All clear</div>
+    <div style="font-size:13px;">No pending account requests.</div>
+</div>
+{% endif %}
+{% endblock %}
